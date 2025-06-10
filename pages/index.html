@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keuangan 158A - Dashboard</title>
+    <link rel="stylesheet" href="../components/css/styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Keuangan 158A</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="nav-item active">
+                        <a href="#" class="nav-link">
+                            <i class="fas fa-home"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-page="entry">
+                            <i class="fas fa-plus-circle"></i>
+                            <span>Entry</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-page="income">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>Income</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-page="expense">
+                            <i class="fas fa-arrow-down"></i>
+                            <span>Expense</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-page="debts">
+                            <i class="fas fa-credit-card"></i>
+                            <span>Debts</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-page="save">
+                            <i class="fas fa-piggy-bank"></i>
+                            <span>Save</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-page="settings">
+                            <i class="fas fa-cog"></i>
+                            <span>Pengaturan</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar">A</div>
+                    <div class="user-info">
+                        <div class="user-name">Anto Sihombing</div>
+                        <div class="user-role">Admin</div>
+                    </div>
+                </div>
+                <button class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Keluar</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Content -->
+            <div class="page-content" id="dashboard-content">
+                <!-- Welcome Banner -->
+                <div class="welcome-banner">
+                    <div class="welcome-content">
+                        <h1>Selamat Datang, Anto Sihombing! 👋</h1>
+                        <p>Keberuntungan adalah hasil dari perencanaan yang baik</p>
+                    </div>
+                    <div class="welcome-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card blue">
+                        <div class="stat-icon">
+                            <i class="fas fa-arrow-up"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-label">Income</div>
+                            <div class="stat-number" id="total-income">0</div>
+                            <div class="stat-subtitle">Pendapatan bulan ini</div>
+                            <div class="stat-change positive">+2 dari bulan lalu</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card green">
+                        <div class="stat-icon">
+                            <i class="fas fa-arrow-down"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-label">Expense</div>
+                            <div class="stat-number" id="total-expense">0</div>
+                            <div class="stat-subtitle">Pengeluaran bulan ini</div>
+                            <div class="stat-change positive">+8 dari bulan lalu</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card orange">
+                        <div class="stat-icon">
+                            <i class="fas fa-credit-card"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-label">Debts</div>
+                            <div class="stat-number" id="total-debts">0</div>
+                            <div class="stat-subtitle">Utang bulan ini</div>
+                            <div class="stat-change positive">+3 minggu ini</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card purple">
+                        <div class="stat-icon">
+                            <i class="fas fa-piggy-bank"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-label">Save</div>
+                            <div class="stat-number" id="total-save">0</div>
+                            <div class="stat-subtitle">Tabungan bulan ini</div>
+                            <div class="stat-change positive">+0.3 dari bulan lalu</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Grid -->
+                <div class="content-grid">
+                    <!-- Recent Transactions -->
+                    <div class="content-section">
+                        <div class="section-header">
+                            <h3>Transaksi Terbaru</h3>
+                            <p>Transaksi yang baru-baru ini Anda input</p>
+                            <button class="add-btn" onclick="showPage('entry')">
+                                <i class="fas fa-plus"></i>
+                                Tambah Transaksi
+                            </button>
+                        </div>
+                        <div class="transaction-list" id="recent-transactions">
+                            <!-- Transactions will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Recent Activities -->
+                    <div class="content-section">
+                        <div class="section-header">
+                            <h3>Aktivitas Terbaru</h3>
+                            <p>Update terbaru dari sistem Anda</p>
+                        </div>
+                        <div class="activity-list">
+                            <div class="activity-item">
+                                <div class="activity-icon">
+                                    <i class="fas fa-calculator"></i>
+                                </div>
+                                <div class="activity-info">
+                                    <div class="activity-title">Laporan Bulanan...</div>
+                                    <div class="activity-author">Sistem</div>
+                                    <div class="activity-time">2 jam lalu</div>
+                                </div>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-icon">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <div class="activity-info">
+                                    <div class="activity-title">Analisis Keuangan...</div>
+                                    <div class="activity-author">Sistem</div>
+                                    <div class="activity-time">4 jam lalu</div>
+                                </div>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-icon">
+                                    <i class="fas fa-bell"></i>
+                                </div>
+                                <div class="activity-info">
+                                    <div class="activity-title">Reminder Pembayaran...</div>
+                                    <div class="activity-time">1 hari lalu</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="view-all">
+                            <a href="#" class="view-all-link">Lihat Semua Aktivitas</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Entry Content -->
+            <div class="page-content" id="entry-content" style="display: none;">
+                <div class="page-header">
+                    <h1><i class="fas fa-plus-circle"></i> Entry Transaksi</h1>
+                    <p>Tambahkan transaksi keuangan baru</p>
+                </div>
+
+                <div class="entry-form-container">
+                    <form class="entry-form" id="entryForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cashflowType">Jenis Cashflow</label>
+                                <select id="cashflowType" name="cashflowType" required>
+                                    <option value="">Pilih jenis cashflow</option>
+                                    <option value="income">Income</option>
+                                    <option value="expense">Expense</option>
+                                    <option value="debt">Debt</option>
+                                    <option value="save">Save</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="transactionDate">Tanggal</label>
+                                <input type="date" id="transactionDate" name="transactionDate" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="category">Kategori</label>
+                                <select id="category" name="category" required>
+                                    <option value="">Pilih kategori</option>
+                                    <!-- Categories will be populated based on cashflow type -->
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="amount">Jumlah (Rp)</label>
+                                <input type="number" id="amount" name="amount" placeholder="0" min="0" step="1000" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="description">Deskripsi</label>
+                            <textarea id="description" name="description" placeholder="Masukkan deskripsi transaksi..." rows="3"></textarea>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary" onclick="resetEntryForm()">Reset</button>
+                            <button type="submit" class="btn-primary">
+                                <i class="fas fa-save"></i>
+                                Simpan Transaksi
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Settings Content -->
+            <div class="page-content" id="settings-content" style="display: none;">
+                <div class="page-header">
+                    <h1><i class="fas fa-cog"></i> Pengaturan</h1>
+                    <p>Kelola preferensi dan konfigurasi sistem</p>
+                </div>
+
+                <div class="settings-container">
+                    <!-- Settings Navigation -->
+                    <div class="settings-nav">
+                        <div class="settings-nav-item active" data-setting="account">
+                            <i class="fas fa-user"></i>
+                            <span>Pengaturan Akun</span>
+                        </div>
+                        <div class="settings-nav-item" data-setting="users" id="users-nav" style="display: none;">
+                            <i class="fas fa-users"></i>
+                            <span>Manajemen Pengguna</span>
+                        </div>
+                        <div class="settings-nav-item" data-setting="ui">
+                            <i class="fas fa-palette"></i>
+                            <span>Pengaturan Tampilan</span>
+                        </div>
+                        <div class="settings-nav-item" data-setting="notifications">
+                            <i class="fas fa-bell"></i>
+                            <span>Notifikasi</span>
+                        </div>
+                        <div class="settings-nav-item" data-setting="preferences">
+                            <i class="fas fa-sliders-h"></i>
+                            <span>Preferensi Aplikasi</span>
+                        </div>
+                        <div class="settings-nav-item" data-setting="security" id="security-nav" style="display: none;">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>Sistem & Keamanan</span>
+                        </div>
+                        <div class="settings-nav-item" data-setting="integrations">
+                            <i class="fas fa-plug"></i>
+                            <span>Integrasi Pihak Ketiga</span>
+                        </div>
+                        <div class="settings-nav-item" data-setting="privacy">
+                            <i class="fas fa-user-shield"></i>
+                            <span>Data Pribadi</span>
+                        </div>
+                    </div>
+
+                    <!-- Settings Content -->
+                    <div class="settings-content">
+                        <!-- Account Settings -->
+                        <div class="setting-panel active" id="account-settings">
+                            <h2>🔐 Pengaturan Akun</h2>
+                            
+                            <div class="setting-section">
+                                <h3>Informasi Pribadi</h3>
+                                <form class="setting-form">
+                                    <div class="form-group">
+                                        <label>Nama Lengkap</label>
+                                        <input type="text" id="fullName" value="Anto Sihombing">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Email</label>
+                                        <input type="email" id="email" value="anto@example.com">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Username</label>
+                                        <input type="text" id="username" value="anto">
+                                    </div>
+                                    <button type="button" class="btn-primary">Simpan Perubahan</button>
+                                </form>
+                            </div>
+
+                            <div class="setting-section">
+                                <h3>Keamanan</h3>
+                                <div class="security-options">
+                                    <div class="security-item">
+                                        <div class="security-info">
+                                            <h4>Ganti Password</h4>
+                                            <p>Perbarui password untuk keamanan akun</p>
+                                        </div>
+                                        <button class="btn-secondary">Ganti Password</button>
+                                    </div>
+                                    <div class="security-item">
+                                        <div class="security-info">
+                                            <h4>Two-Factor Authentication</h4>
+                                            <p>Tambahkan lapisan keamanan ekstra</p>
+                                        </div>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="twoFA">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                    <div class="security-item">
+                                        <div class="security-info">
+                                            <h4>Kelola Sesi Login</h4>
+                                            <p>Lihat dan kelola perangkat yang login</p>
+                                        </div>
+                                        <button class="btn-secondary">Kelola Sesi</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- User Management Settings (Admin Only) -->
+                        <div class="setting-panel" id="users-settings">
+                            <h2>👥 Manajemen Pengguna</h2>
+                            
+                            <div class="setting-section">
+                                <div class="section-header">
+                                    <h3>Daftar Pengguna</h3>
+                                    <button class="btn-primary">
+                                        <i class="fas fa-plus"></i>
+                                        Tambah Pengguna
+                                    </button>
+                                </div>
+                                <div class="users-table">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Nama</th>
+                                                <th>Email</th>
+                                                <th>Role</th>
+                                                <th>Status</th>
+                                                <th>Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="users-list">
+                                            <!-- Users will be populated by JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- UI Settings -->
+                        <div class="setting-panel" id="ui-settings">
+                            <h2>🎨 Pengaturan Tampilan</h2>
+                            
+                            <div class="setting-section">
+                                <h3>Tema</h3>
+                                <div class="theme-options">
+                                    <div class="theme-option">
+                                        <input type="radio" id="light-theme" name="theme" value="light" checked>
+                                        <label for="light-theme">
+                                            <div class="theme-preview light"></div>
+                                            <span>Terang</span>
+                                        </label>
+                                    </div>
+                                    <div class="theme-option">
+                                        <input type="radio" id="dark-theme" name="theme" value="dark">
+                                        <label for="dark-theme">
+                                            <div class="theme-preview dark"></div>
+                                            <span>Gelap</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="setting-section">
+                                <h3>Aksesibilitas</h3>
+                                <div class="accessibility-options">
+                                    <div class="setting-item">
+                                        <label>Ukuran Font</label>
+                                        <select id="fontSize">
+                                            <option value="small">Kecil</option>
+                                            <option value="medium" selected>Sedang</option>
+                                            <option value="large">Besar</option>
+                                        </select>
+                                    </div>
+                                    <div class="setting-item">
+                                        <label>Posisi Sidebar</label>
+                                        <select id="sidebarPosition">
+                                            <option value="left" selected>Kiri</option>
+                                            <option value="right">Kanan</option>
+                                        </select>
+                                    </div>
+                                    <div class="setting-item">
+                                        <label>Bahasa</label>
+                                        <select id="language">
+                                            <option value="id" selected>Bahasa Indonesia</option>
+                                            <option value="en">English</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notification Settings -->
+                        <div class="setting-panel" id="notifications-settings">
+                            <h2>✉️ Pengaturan Notifikasi</h2>
+                            
+                            <div class="setting-section">
+                                <h3>Email Notifikasi</h3>
+                                <div class="notification-options">
+                                    <div class="notification-item">
+                                        <div class="notification-info">
+                                            <h4>Transaksi Baru</h4>
+                                            <p>Notifikasi saat ada transaksi baru</p>
+                                        </div>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="emailTransactions" checked>
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                    <div class="notification-item">
+                                        <div class="notification-info">
+                                            <h4>Laporan Bulanan</h4>
+                                            <p>Laporan keuangan bulanan</p>
+                                        </div>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="emailReports" checked>
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                    <div class="notification-item">
+                                        <div class="notification-info">
+                                            <h4>Reminder Pembayaran</h4>
+                                            <p>Pengingat untuk pembayaran yang jatuh tempo</p>
+                                        </div>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="emailReminders" checked>
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="setting-section">
+                                <h3>Push Notification</h3>
+                                <div class="notification-options">
+                                    <div class="notification-item">
+                                        <div class="notification-info">
+                                            <h4>Browser Notifications</h4>
+                                            <p>Notifikasi melalui browser</p>
+                                        </div>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="pushNotifications">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- App Preferences -->
+                        <div class="setting-panel" id="preferences-settings">
+                            <h2>🌐 Preferensi Aplikasi</h2>
+                            
+                            <div class="setting-section">
+                                <h3>Regional & Format</h3>
+                                <div class="preferences-options">
+                                    <div class="setting-item">
+                                        <label>Zona Waktu</label>
+                                        <select id="timezone">
+                                            <option value="Asia/Jakarta" selected>WIB (UTC+7)</option>
+                                            <option value="Asia/Makassar">WITA (UTC+8)</option>
+                                            <option value="Asia/Jayapura">WIT (UTC+9)</option>
+                                        </select>
+                                    </div>
+                                    <div class="setting-item">
+                                        <label>Format Tanggal</label>
+                                        <select id="dateFormat">
+                                            <option value="dd/mm/yyyy" selected>DD/MM/YYYY</option>
+                                            <option value="mm/dd/yyyy">MM/DD/YYYY</option>
+                                            <option value="yyyy-mm-dd">YYYY-MM-DD</option>
+                                        </select>
+                                    </div>
+                                    <div class="setting-item">
+                                        <label>Mata Uang Default</label>
+                                        <select id="currency">
+                                            <option value="IDR" selected>Rupiah (IDR)</option>
+                                            <option value="USD">US Dollar (USD)</option>
+                                            <option value="EUR">Euro (EUR)</option>
+                                        </select>
+                                    </div>
+                                    <div class="setting-item">
+                                        <label>Halaman Default</label>
+                                        <select id="defaultPage">
+                                            <option value="dashboard" selected>Dashboard</option>
+                                            <option value="entry">Entry</option>
+                                            <option value="income">Income</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- System & Security (Admin Only) -->
+                        <div class="setting-panel" id="security-settings">
+                            <h2>🛠️ Sistem & Keamanan</h2>
+                            
+                            <div class="setting-section">
+                                <h3>Backup & Restore</h3>
+                                <div class="system-options">
+                                    <div class="system-item">
+                                        <div class="system-info">
+                                            <h4>Backup Data</h4>
+                                            <p>Buat backup data sistem</p>
+                                        </div>
+                                        <button class="btn-primary">Buat Backup</button>
+                                    </div>
+                                    <div class="system-item">
+                                        <div class="system-info">
+                                            <h4>Restore Data</h4>
+                                            <p>Pulihkan data dari backup</p>
+                                        </div>
+                                        <button class="btn-secondary">Restore</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="setting-section">
+                                <h3>API Management</h3>
+                                <div class="api-keys">
+                                    <div class="api-item">
+                                        <div class="api-info">
+                                            <h4>API Key</h4>
+                                            <p>Kunci untuk integrasi API</p>
+                                        </div>
+                                        <button class="btn-secondary">Generate Key</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Third-party Integrations -->
+                        <div class="setting-panel" id="integrations-settings">
+                            <h2>🧩 Integrasi Pihak Ketiga</h2>
+                            
+                            <div class="setting-section">
+                                <h3>Login Sosial</h3>
+                                <div class="integration-options">
+                                    <div class="integration-item">
+                                        <div class="integration-info">
+                                            <i class="fab fa-google"></i>
+                                            <div>
+                                                <h4>Google</h4>
+                                                <p>Login menggunakan akun Google</p>
+                                            </div>
+                                        </div>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="googleLogin">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                    <div class="integration-item">
+                                        <div class="integration-info">
+                                            <i class="fab fa-github"></i>
+                                            <div>
+                                                <h4>GitHub</h4>
+                                                <p>Login menggunakan akun GitHub</p>
+                                            </div>
+                                        </div>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="githubLogin">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="setting-section">
+                                <h3>Tools Eksternal</h3>
+                                <div class="integration-options">
+                                    <div class="integration-item">
+                                        <div class="integration-info">
+                                            <i class="fab fa-slack"></i>
+                                            <div>
+                                                <h4>Slack</h4>
+                                                <p>Notifikasi melalui Slack</p>
+                                            </div>
+                                        </div>
+                                        <button class="btn-secondary">Konfigurasi</button>
+                                    </div>
+                                    <div class="integration-item">
+                                        <div class="integration-info">
+                                            <i class="fas fa-webhook"></i>
+                                            <div>
+                                                <h4>Webhook</h4>
+                                                <p>Setup webhook untuk integrasi custom</p>
+                                            </div>
+                                        </div>
+                                        <button class="btn-secondary">Setup</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Privacy Settings -->
+                        <div class="setting-panel" id="privacy-settings">
+                            <h2>📁 Pengelolaan Data Pribadi</h2>
+                            
+                            <div class="setting-section">
+                                <h3>Data Export</h3>
+                                <div class="privacy-options">
+                                    <div class="privacy-item">
+                                        <div class="privacy-info">
+                                            <h4>Ekspor Data Pribadi</h4>
+                                            <p>Download semua data pribadi Anda</p>
+                                        </div>
+                                        <button class="btn-primary">Ekspor Data</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="setting-section">
+                                <h3>Penghapusan Akun</h3>
+                                <div class="privacy-options">
+                                    <div class="privacy-item danger">
+                                        <div class="privacy-info">
+                                            <h4>Hapus Akun</h4>
+                                            <p>Hapus akun dan semua data secara permanen</p>
+                                        </div>
+                                        <button class="btn-danger">Hapus Akun</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="setting-section">
+                                <h3>Persetujuan Data</h3>
+                                <div class="consent-options">
+                                    <div class="consent-item">
+                                        <label class="checkbox-wrapper">
+                                            <input type="checkbox" id="analyticsConsent" checked>
+                                            <span class="checkmark"></span>
+                                            <span>Izinkan pengumpulan data analytics</span>
+                                        </label>
+                                    </div>
+                                    <div class="consent-item">
+                                        <label class="checkbox-wrapper">
+                                            <input type="checkbox" id="marketingConsent">
+                                            <span class="checkmark"></span>
+                                            <span>Izinkan email marketing</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Other Page Contents (Income, Expense, Debts, Save) -->
+            <div class="page-content" id="income-content" style="display: none;">
+                <div class="page-header">
+                    <h1><i class="fas fa-arrow-up"></i> Income</h1>
+                    <p>Kelola dan lihat semua pendapatan</p>
+                </div>
+                <div class="transactions-container">
+                    <div class="transactions-list" id="income-list">
+                        <!-- Income transactions will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="page-content" id="expense-content" style="display: none;">
+                <div class="page-header">
+                    <h1><i class="fas fa-arrow-down"></i> Expense</h1>
+                    <p>Kelola dan lihat semua pengeluaran</p>
+                </div>
+                <div class="transactions-container">
+                    <div class="transactions-list" id="expense-list">
+                        <!-- Expense transactions will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="page-content" id="debts-content" style="display: none;">
+                <div class="page-header">
+                    <h1><i class="fas fa-credit-card"></i> Debts</h1>
+                    <p>Kelola dan lihat semua utang</p>
+                </div>
+                <div class="transactions-container">
+                    <div class="transactions-list" id="debts-list">
+                        <!-- Debt transactions will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="page-content" id="save-content" style="display: none;">
+                <div class="page-header">
+                    <h1><i class="fas fa-piggy-bank"></i> Save</h1>
+                    <p>Kelola dan lihat semua tabungan</p>
+                </div>
+                <div class="transactions-container">
+                    <div class="transactions-list" id="save-list">
+                        <!-- Save transactions will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../components/js/script.js"></script>
+</body>
+</html>
+
