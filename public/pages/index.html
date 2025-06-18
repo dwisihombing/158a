@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keuangan 158A - Dashboard</title>
+    <link rel="icon" type="image/png" href="../favicon.ico">
+    <link rel="stylesheet" href="../components/css/styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-container">
+                    <img src="../components/assets/img/icon.png" alt="Logo" class="sidebar-logo">
+                    <h2>Keuangan 158A</h2>
+                </div>
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="nav-item active">
+                        <a href="#" class="nav-link" data-page="dashboard">
+                            <i class="fas fa-home"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-page="entry">
+                            <i class="fas fa-plus-circle"></i>
+                            <span>Entry</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-page="income">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>Income</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-page="expense">
+                            <i class="fas fa-arrow-down"></i>
+                            <span>Expense</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-page="debts">
+                            <i class="fas fa-credit-card"></i>
+                            <span>Debts</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-page="save">
+                            <i class="fas fa-piggy-bank"></i>
+                            <span>Save</span>
+                        </a>
+                    </li>
+                    <li class="nav-item admin-only">
+                        <a href="#" class="nav-link" data-page="admin">
+                            <i class="fas fa-users-cog"></i>
+                            <span>Admin</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Header -->
+            <header class="top-header">
+                <div class="header-left">
+                    <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1 class="page-title" id="pageTitle">Dashboard</h1>
+                </div>
+                <div class="header-right">
+                    <div class="user-profile-dropdown" id="userProfileDropdown">
+                        <div class="user-avatar" id="userAvatar">
+                            <img src="../components/assets/img/icon.png" alt="User Avatar">
+                        </div>
+                        <div class="user-info">
+                            <div class="user-name" id="userName">Loading...</div>
+                            <div class="user-role" id="userRole">Loading...</div>
+                        </div>
+                        <i class="fas fa-chevron-down dropdown-arrow"></i>
+                        
+                        <!-- Profile Dropdown Menu -->
+                        <div class="profile-dropdown-menu" id="profileDropdownMenu">
+                            <div class="dropdown-header">
+                                <div class="user-details">
+                                    <div class="user-name-large" id="userNameLarge">Loading...</div>
+                                    <div class="user-email" id="userEmail">Loading...</div>
+                                </div>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <div class="dropdown-section">
+                                <h4>Pengaturan</h4>
+                                <a href="#" class="dropdown-item" data-action="settings">
+                                    <i class="fas fa-cog"></i>
+                                    <span>Pengaturan Akun</span>
+                                </a>
+                                <a href="#" class="dropdown-item" data-action="preferences">
+                                    <i class="fas fa-palette"></i>
+                                    <span>Preferensi</span>
+                                </a>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <div class="dropdown-section">
+                                <h4>Peran</h4>
+                                <div class="role-switcher" id="roleSwitcher">
+                                    <!-- Role options will be populated by JavaScript -->
+                                </div>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <a href="#" class="dropdown-item logout-item" data-action="logout">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span>Keluar</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content Container -->
+            <div class="page-container">
+                <!-- Dashboard Content -->
+                <div class="page-content active" id="dashboard-content">
+                    <!-- Welcome Banner -->
+                    <div class="welcome-banner">
+                        <div class="welcome-content">
+                            <h1 id="welcomeMessage">Selamat Datang! 👋</h1>
+                            <p>Keberuntungan adalah hasil dari perencanaan yang baik</p>
+                        </div>
+                        <div class="welcome-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="stats-grid">
+                        <div class="stat-card blue">
+                            <div class="stat-icon">
+                                <i class="fas fa-arrow-up"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-label">Income</div>
+                                <div class="stat-value" id="totalIncome">Rp 0</div>
+                                <div class="stat-change positive">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span>+0% dari bulan lalu</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card red">
+                            <div class="stat-icon">
+                                <i class="fas fa-arrow-down"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-label">Expense</div>
+                                <div class="stat-value" id="totalExpense">Rp 0</div>
+                                <div class="stat-change negative">
+                                    <i class="fas fa-arrow-down"></i>
+                                    <span>+0% dari bulan lalu</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card orange">
+                            <div class="stat-icon">
+                                <i class="fas fa-credit-card"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-label">Debts</div>
+                                <div class="stat-value" id="totalDebts">Rp 0</div>
+                                <div class="stat-change neutral">
+                                    <i class="fas fa-minus"></i>
+                                    <span>0% dari bulan lalu</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card green">
+                            <div class="stat-icon">
+                                <i class="fas fa-piggy-bank"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-label">Save</div>
+                                <div class="stat-value" id="totalSave">Rp 0</div>
+                                <div class="stat-change positive">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span>+0% dari bulan lalu</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Transactions -->
+                    <div class="content-section">
+                        <div class="section-header">
+                            <h2>Transaksi Terbaru</h2>
+                            <a href="#" class="view-all-btn" data-page="entry">Lihat Semua</a>
+                        </div>
+                        <div class="transactions-list" id="recentTransactions">
+                            <div class="empty-state">
+                                <i class="fas fa-receipt"></i>
+                                <p>Belum ada transaksi</p>
+                                <a href="#" class="btn btn-primary" data-page="entry">Tambah Transaksi</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Entry Content -->
+                <div class="page-content" id="entry-content">
+                    <div class="page-header">
+                        <h1>Entry Transaksi</h1>
+                        <p>Tambahkan transaksi keuangan Anda</p>
+                    </div>
+
+                    <div class="entry-form-container">
+                        <form class="entry-form" id="entryForm">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="cashflowType">Jenis Cashflow</label>
+                                    <select id="cashflowType" name="cashflowType" required>
+                                        <option value="">Pilih jenis cashflow</option>
+                                        <option value="income">Income</option>
+                                        <option value="expense">Expense</option>
+                                        <option value="debt">Debt</option>
+                                        <option value="save">Save</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="transactionDate">Tanggal</label>
+                                    <input type="date" id="transactionDate" name="transactionDate" required>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="category">Kategori</label>
+                                    <select id="category" name="category" required>
+                                        <option value="">Pilih kategori</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="amount">Jumlah (Rp)</label>
+                                    <input type="number" id="amount" name="amount" placeholder="0" min="0" step="1000" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="description">Deskripsi</label>
+                                <textarea id="description" name="description" placeholder="Masukkan deskripsi transaksi" rows="3"></textarea>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="button" class="btn btn-secondary" id="resetForm">Reset</button>
+                                <button type="submit" class="btn btn-primary">Simpan Transaksi</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Income Content -->
+                <div class="page-content" id="income-content">
+                    <div class="page-header">
+                        <h1>Income</h1>
+                        <p>Daftar semua pemasukan</p>
+                    </div>
+                    <div class="transactions-container" id="incomeTransactions">
+                        <!-- Income transactions will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Expense Content -->
+                <div class="page-content" id="expense-content">
+                    <div class="page-header">
+                        <h1>Expense</h1>
+                        <p>Daftar semua pengeluaran</p>
+                    </div>
+                    <div class="transactions-container" id="expenseTransactions">
+                        <!-- Expense transactions will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Debts Content -->
+                <div class="page-content" id="debts-content">
+                    <div class="page-header">
+                        <h1>Debts</h1>
+                        <p>Daftar semua hutang</p>
+                    </div>
+                    <div class="transactions-container" id="debtsTransactions">
+                        <!-- Debts transactions will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Save Content -->
+                <div class="page-content" id="save-content">
+                    <div class="page-header">
+                        <h1>Save</h1>
+                        <p>Daftar semua tabungan</p>
+                    </div>
+                    <div class="transactions-container" id="saveTransactions">
+                        <!-- Save transactions will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Admin Content -->
+                <div class="page-content" id="admin-content">
+                    <div class="page-header">
+                        <h1>Admin Panel</h1>
+                        <p>Kelola pengguna dan pengaturan sistem</p>
+                    </div>
+
+                    <div class="admin-tabs">
+                        <div class="tab-buttons">
+                            <button class="tab-btn active" data-tab="users">Kelola Pengguna</button>
+                            <button class="tab-btn" data-tab="system">Pengaturan Sistem</button>
+                        </div>
+
+                        <div class="tab-content">
+                            <div class="tab-pane active" id="users-tab">
+                                <div class="users-management">
+                                    <div class="section-header">
+                                        <h3>Daftar Pengguna</h3>
+                                        <button class="btn btn-primary" id="addUserBtn">Tambah Pengguna</button>
+                                    </div>
+                                    <div class="users-list" id="usersList">
+                                        <!-- Users will be populated here -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="tab-pane" id="system-tab">
+                                <div class="system-settings">
+                                    <h3>Pengaturan Sistem</h3>
+                                    <div class="settings-grid">
+                                        <div class="setting-item">
+                                            <h4>Backup Data</h4>
+                                            <p>Backup semua data transaksi</p>
+                                            <button class="btn btn-secondary">Backup Sekarang</button>
+                                        </div>
+                                        <div class="setting-item">
+                                            <h4>Reset Data</h4>
+                                            <p>Hapus semua data transaksi</p>
+                                            <button class="btn btn-danger">Reset Data</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDJ5acM1Ev3zy-Nr-30VKaSini8iVAK5-U",
+            authDomain: "expense-19.firebaseapp.com",
+            projectId: "expense-19",
+            storageBucket: "expense-19.firebasestorage.app",
+            messagingSenderId: "906282555690",
+            appId: "1:906282555690:web:d557d02c2b29422cf12653",
+            measurementId: "G-6VEKLLLVR2"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+    </script>
+
+    <script src="../components/js/script.js"></script>
+</body>
+</html>
+

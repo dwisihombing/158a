@@ -179,12 +179,9 @@ function handleLogout(event) {
 // Function to clear user session
 function clearUserSession() {
     try {
-        // Clear localStorage - semua data session
+        // Clear localStorage
         localStorage.removeItem('userSession');
         localStorage.removeItem('currentRole');
-        localStorage.removeItem('currentUser');  // Data Firebase
-        localStorage.removeItem('userRole');     // Data Firebase
-        localStorage.removeItem('rememberedUsername');
         
         // Clear sessionStorage
         sessionStorage.removeItem('currentRole');
@@ -195,13 +192,6 @@ function clearUserSession() {
             clearTimeout(window.sessionTimer);
         }
         
-        // Logout dari Firebase jika tersedia
-        if (typeof firebase !== 'undefined' && firebase.auth) {
-            firebase.auth().signOut().catch((error) => {
-                console.error('Error signing out from Firebase:', error);
-            });
-        }
-        
         console.log('User session cleared successfully');
     } catch (error) {
         console.error('Error clearing session:', error);
@@ -210,35 +200,10 @@ function clearUserSession() {
 
 // Function to check if user is authenticated
 function checkUserAuthentication() {
-    let sessionData = localStorage.getItem('userSession');
-    
-    // Jika tidak ada userSession, coba ambil dari data Firebase
-    if (!sessionData) {
-        const currentUser = localStorage.getItem('currentUser');
-        if (currentUser) {
-            try {
-                const userData = JSON.parse(currentUser);
-                // Buat session data dari data Firebase
-                const sessionInfo = {
-                    username: userData.displayName,
-                    email: userData.email,
-                    role: userData.role,
-                    loginTime: userData.loginTime,
-                    uid: userData.uid
-                };
-                localStorage.setItem('userSession', JSON.stringify(sessionInfo));
-                localStorage.setItem('currentRole', userData.role);
-                sessionData = JSON.stringify(sessionInfo);
-                console.log('Session data created from Firebase data');
-            } catch (error) {
-                console.error('Error creating session from Firebase data:', error);
-            }
-        }
-    }
+    const sessionData = localStorage.getItem('userSession');
     
     if (!sessionData) {
         // No session found, redirect to login
-        console.log('No session data found, redirecting to login');
         window.location.href = 'login.html';
         return false;
     }

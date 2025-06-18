@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Keuangan 158A</title>
+    <link rel="icon" type="image/png" href="../favicon.ico">
     <link rel="stylesheet" href="../components/css/login-styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
+
 <body>
     <div class="login-container">
         <!-- Background Animation -->
@@ -22,26 +25,20 @@
             <!-- Logo Section -->
             <div class="logo-section">
                 <div class="logo">
-                    <i class="fas fa-graduation-cap"></i>
+                    <img src="../components/assets/img/icon.png" alt="Logo" style="width: 60px; height: 60px;">
                 </div>
-                <h1>Kelas Guru</h1>
-                <p>Sistem Manajemen Pembelajaran</p>
+                <h1>Keuangan 158A</h1>
+                <p>Sistem Keuangan Rumah</p>
             </div>
 
             <!-- Login Form -->
             <form class="login-form" id="loginForm">
                 <div class="form-group">
-                    <label for="username">Username</label>
+                    <label for="username">Email</label>
                     <div class="input-wrapper">
-                        <i class="fas fa-user"></i>
-                        <input 
-                            type="text" 
-                            id="username" 
-                            name="username" 
-                            placeholder="Masukkan username Anda"
-                            required
-                            autocomplete="username"
-                        >
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="username" name="username" placeholder="Masukkan email Anda" required
+                            autocomplete="email">
                     </div>
                 </div>
 
@@ -49,14 +46,8 @@
                     <label for="password">Password</label>
                     <div class="input-wrapper">
                         <i class="fas fa-lock"></i>
-                        <input 
-                            type="password" 
-                            id="password" 
-                            name="password" 
-                            placeholder="Masukkan password Anda"
-                            required
-                            autocomplete="current-password"
-                        >
+                        <input type="password" id="password" name="password" placeholder="Masukkan password Anda"
+                            required autocomplete="current-password">
                         <button type="button" class="toggle-password" id="togglePassword">
                             <i class="fas fa-eye"></i>
                         </button>
@@ -138,27 +129,90 @@
                 </button>
             </div>
         </div>
-    </div>
 
-    <!-- Demo Credentials Info -->
-    <div class="demo-info">
-        <div class="demo-card">
-            <h4><i class="fas fa-info-circle"></i> Demo Credentials</h4>
-            <div class="demo-credentials">
-                <div class="credential-item">
-                    <strong>Username:</strong> anto
+        <!-- Registration Modal -->
+        <div class="modal" id="registrationModal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Daftar Akun Baru</h2>
+                    <button class="close-modal" id="closeRegistrationModal">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
-                <div class="credential-item">
-                    <strong>Password:</strong> anto
-                </div>
-                <div class="credential-item">
-                    <strong>Roles:</strong> Admin / User
-                </div>
+                <form id="registrationForm">
+                    <div class="form-group">
+                        <label for="regName">Nama Lengkap</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="regName" name="regName" placeholder="Masukkan nama lengkap" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="regEmail">Email</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-envelope"></i>
+                            <input type="email" id="regEmail" name="regEmail" placeholder="Masukkan email" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="regPassword">Password</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="regPassword" name="regPassword" placeholder="Minimal 6 karakter" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="regConfirmPassword">Konfirmasi Password</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="regConfirmPassword" name="regConfirmPassword" placeholder="Ulangi password" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="regRole">Peran</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-user-tag"></i>
+                            <select id="regRole" name="regRole" required>
+                                <option value="">Pilih peran</option>
+                                <option value="user">User</option>
+                                <option value="admin">Administrator</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="login-btn" id="registerBtn">
+                        <span class="btn-text">Daftar</span>
+                        <div class="btn-loader" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
+                    </button>
+                </form>
             </div>
         </div>
     </div>
 
-    <script src="../components/js/login-script.js"></script>
-</body>
-</html>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
 
+    <script>
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDJ5acM1Ev3zy-Nr-30VKaSini8iVAK5-U",
+            authDomain: "expense-19.firebaseapp.com",
+            projectId: "expense-19",
+            storageBucket: "expense-19.firebasestorage.app",
+            messagingSenderId: "906282555690",
+            appId: "1:906282555690:web:d557d02c2b29422cf12653",
+            measurementId: "G-6VEKLLLVR2"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+    </script>
+
+    <script src="../components/js/login-script.js"></script>
+
+</body>
+
+</html>
