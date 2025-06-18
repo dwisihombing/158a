@@ -201,20 +201,52 @@ async function handleLogin(event) {
         // Reset login attempts on successful login
         loginAttempts = 0;
         
-        // Save user information and role to localStorage and Firestore
+        // Check user status from Firestore
+        const userDoc = await firebase.firestore().collection('users').doc(user.uid).get();
+        
+        if (!userDoc.exists) {
+            // User tidak ada di Firestore, kemungkinan akun lama
+            await firebase.auth().signOut();
+            throw new Error('Akun Anda belum terdaftar dalam sistem. Silakan daftar ulang.');
+        }
+        
+        const firestoreUserData = userDoc.data();
+        
+        // Check user status
+        if (firestoreUserData.status === 'pending') {
+            await firebase.auth().signOut();
+            throw new Error('Akun Anda masih menunggu persetujuan admin. Silakan hubungi administrator.');
+        }
+        
+        if (firestoreUserData.status === 'rejected') {
+            await firebase.auth().signOut();
+            throw new Error('Akun Anda ditolak oleh administrator. Silakan hubungi administrator untuk informasi lebih lanjut.');
+        }
+        
+        if (firestoreUserData.status !== 'approved') {
+            await firebase.auth().signOut();
+            throw new Error('Status akun tidak valid. Silakan hubungi administrator.');
+        }
+        
+        // Gunakan role dari Firestore (yang sudah disetujui admin)
+        const approvedRole = firestoreUserData.role;
+        
+        // Save user information and role to localStorage
         const userData = {
             uid: user.uid,
             email: user.email,
-            displayName: user.displayName || email.split('@')[0],
-            role: selectedRole,
+            displayName: user.displayName || firestoreUserData.displayName || email.split('@')[0],
+            role: approvedRole,
             loginTime: new Date().toISOString()
         };
         
-        // Save to Firestore
-        await saveUserDataToFirestore(userData);
+        // Update login time in Firestore
+        await firebase.firestore().collection('users').doc(user.uid).update({
+            lastLoginTime: new Date().toISOString()
+        });
         
         localStorage.setItem('currentUser', JSON.stringify(userData));
-        localStorage.setItem('userRole', selectedRole);
+        localStorage.setItem('userRole', approvedRole);
         
         // Show success message
         showSuccessMessage(`Login berhasil! Selamat datang, ${userData.displayName}!`);
@@ -224,7 +256,7 @@ async function handleLogin(event) {
         
         // Redirect to dashboard after delay
         setTimeout(() => {
-            redirectToDashboard(selectedRole);
+            redirectToDashboard(approvedRole);
         }, 2000);
         
     } catch (error) {
@@ -307,30 +339,33 @@ async function handleRegistration(event) {
         
         console.log('User registered:', user);
         
-        // Save user information to Firestore
+        // Save user information to Firestore with pending status
         const userData = {
             uid: user.uid,
             email: user.email,
             displayName: name,
-            role: role,
+            requestedRole: role, // Role yang diminta user
+            role: 'pending', // Status pending sampai admin approve
+            status: 'pending', // pending, approved, rejected
             createdAt: new Date().toISOString(),
-            loginTime: new Date().toISOString()
+            approvedAt: null,
+            approvedBy: null
         };
         
         await saveUserDataToFirestore(userData);
         
-        localStorage.setItem('currentUser', JSON.stringify(userData));
-        localStorage.setItem('userRole', role);
+        // Hapus user dari Firebase Auth untuk sementara
+        await user.delete();
         
-        showSuccessMessage(`Registrasi berhasil! Selamat datang, ${name}!`);
+        showSuccessMessage(`Registrasi berhasil! Akun Anda menunggu persetujuan admin. Anda akan dihubungi melalui email setelah akun disetujui.`);
         
         // Hide registration modal
         hideRegistrationModal();
         
-        // Redirect to dashboard
+        // Tidak redirect, tetap di halaman login
         setTimeout(() => {
-            redirectToDashboard(role);
-        }, 2000);
+            clearRegistrationForm();
+        }, 3000);
         
     } catch (error) {
         console.error('Registration error:', error);
@@ -439,6 +474,12 @@ function hideRegistrationModal() {
         if (registrationForm) {
             registrationForm.reset();
         }
+    }
+}
+
+function clearRegistrationForm() {
+    if (registrationForm) {
+        registrationForm.reset();
     }
 }
 

@@ -24,12 +24,14 @@ document.addEventListener('DOMContentLoaded', function() {
 function initializeApp() {
     console.log('Financial Dashboard initialized');
     
-    // Set default date to today
-    const today = new Date().toISOString().split('T')[0];
-    const dateInput = document.getElementById('transactionDate');
-    if (dateInput) {
-        dateInput.value = today;
-    }
+    // Initialize date dropdowns
+    initializeDateDropdowns();
+    
+    // Initialize currency input
+    initializeCurrencyInput();
+    
+    // Initialize preferences
+    initializePreferences();
     
     // Initialize Firebase Auth state listener
     firebase.auth().onAuthStateChanged((user) => {
@@ -177,73 +179,618 @@ function updateUserInterface() {
     const welcomeMessage = document.getElementById('welcomeMessage');
     
     if (userName) userName.textContent = currentUser.displayName;
-    if (userRole) userRole.textContent = currentUser.role;
+    if (userRole) {
+        userRole.textContent = currentUser.role === 'admin' ? 'Administrator' : 'User';
+        userRole.className = `role-badge ${currentUser.role}`;
+    }
     if (userNameLarge) userNameLarge.textContent = currentUser.displayName;
     if (userEmail) userEmail.textContent = currentUser.email;
     if (welcomeMessage) welcomeMessage.textContent = `Selamat Datang, ${currentUser.displayName}! 👋`;
     
-    // Show/hide admin menu based on role
-    const adminMenu = document.querySelector('.admin-only');
-    if (adminMenu) {
-        adminMenu.style.display = currentUser.role === 'admin' ? 'block' : 'none';
+    // Show/hide admin-only features based on role
+    updateRoleBasedVisibility();
+    
+    // Remove role switcher completely - users cannot change their own roles
+    const roleSwitcher = document.getElementById('roleSwitcher');
+    if (roleSwitcher) {
+        roleSwitcher.style.display = 'none';
     }
     
-    // Update role switcher
-    updateRoleSwitcher();
+    // Update page content based on role
+    updatePageContentByRole();
 }
 
-function updateRoleSwitcher() {
-    const roleSwitcher = document.getElementById('roleSwitcher');
-    if (!roleSwitcher || !currentUser) return;
+function updateRoleBasedVisibility() {
+    if (!currentUser) return;
     
-    // For now, we'll allow users to switch between available roles
-    // In a real app, this would be based on user permissions from the database
-    const availableRoles = ['user', 'admin'];
+    const isAdmin = currentUser.role === 'admin';
     
-    roleSwitcher.innerHTML = '';
+    // Show/hide admin menu
+    const adminMenu = document.querySelector('.admin-only');
+    if (adminMenu) {
+        adminMenu.style.display = isAdmin ? 'block' : 'none';
+    }
     
-    availableRoles.forEach(role => {
-        const roleOption = document.createElement('div');
-        roleOption.className = `role-option ${currentUser.role === role ? 'active' : ''}`;
-        roleOption.innerHTML = `
-            <input type="radio" name="role" value="${role}" ${currentUser.role === role ? 'checked' : ''}>
-            <label>${role === 'admin' ? 'Administrator' : 'User'}</label>
+    // Show/hide admin-only sections in each page
+    const adminOnlyElements = document.querySelectorAll('.admin-only-section');
+    adminOnlyElements.forEach(element => {
+        element.style.display = isAdmin ? 'block' : 'none';
+    });
+    
+    // Update dashboard stats access
+    const downloadAllBtn = document.getElementById('downloadAllData');
+    if (downloadAllBtn) {
+        downloadAllBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+    }
+}
+
+function updatePageContentByRole() {
+    if (!currentUser) return;
+    
+    const isAdmin = currentUser.role === 'admin';
+    
+    // Update page titles and descriptions based on role
+    const pageTitle = document.getElementById('pageTitle');
+    const currentPageId = document.querySelector('.page-content.active')?.id;
+    
+    if (currentPageId === 'dashboard-content') {
+        // Admin sees different dashboard content
+        if (isAdmin) {
+            updateAdminDashboard();
+        } else {
+            updateUserDashboard();
+        }
+    }
+}
+
+function updateAdminDashboard() {
+    // Admin gets additional dashboard stats and management options
+    const dashboardContent = document.getElementById('dashboard-content');
+    if (!dashboardContent) return;
+    
+    // Add admin-specific dashboard elements if they don't exist
+    let adminSection = dashboardContent.querySelector('.admin-dashboard-section');
+    if (!adminSection) {
+        adminSection = document.createElement('div');
+        adminSection.className = 'admin-dashboard-section';
+        adminSection.innerHTML = `
+            <div class="content-section">
+                <div class="section-header">
+                    <h2>Admin Panel</h2>
+                    <div class="admin-actions">
+                        <button class="btn btn-primary" onclick="showPage('admin')">
+                            <i class="fas fa-cog"></i> Kelola Sistem
+                        </button>
+                        <button class="btn btn-secondary" id="downloadAllData">
+                            <i class="fas fa-download"></i> Download Semua Data
+                        </button>
+                    </div>
+                </div>
+                <div class="stats-grid admin-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalUsers">0</h3>
+                            <p>Total Pengguna</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="pendingUsers">0</h3>
+                            <p>Menunggu Persetujuan</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-receipt"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalTransactions">0</h3>
+                            <p>Total Transaksi (Semua User)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         `;
         
-        roleOption.addEventListener('click', () => switchRole(role));
-        roleSwitcher.appendChild(roleOption);
-    });
+        // Insert admin section at the beginning of dashboard
+        const firstSection = dashboardContent.querySelector('.content-section');
+        if (firstSection) {
+            dashboardContent.insertBefore(adminSection, firstSection);
+        } else {
+            dashboardContent.appendChild(adminSection);
+        }
+        
+        // Add event listener for download all data
+        const downloadBtn = document.getElementById('downloadAllData');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', downloadAllData);
+        }
+    }
+    
+    // Update admin stats
+    updateAdminStats();
 }
 
-async function switchRole(newRole) {
-    if (!currentUser || currentUser.role === newRole) return;
+function updateUserDashboard() {
+    // Remove admin section if it exists
+    const dashboardContent = document.getElementById('dashboard-content');
+    if (dashboardContent) {
+        const adminSection = dashboardContent.querySelector('.admin-dashboard-section');
+        if (adminSection) {
+            adminSection.remove();
+        }
+    }
+}
+
+async function updateAdminStats() {
+    if (!currentUser || currentUser.role !== 'admin') return;
     
     try {
-        currentUser.role = newRole;
-        localStorage.setItem('userRole', newRole);
-        
-        // Update in Firestore
         const db = firebase.firestore();
-        await db.collection('users').doc(currentUser.uid).update({
-            role: newRole
-        });
         
-        updateUserInterface();
-        showNotification('success', `Peran berhasil diubah ke ${newRole}`);
+        // Get total users count
+        const usersSnapshot = await db.collection('users').get();
+        const totalUsers = usersSnapshot.size;
+        
+        // Get pending users count
+        const pendingSnapshot = await db.collection('users').where('status', '==', 'pending').get();
+        const pendingUsers = pendingSnapshot.size;
+        
+        // Get total transactions count (all users)
+        const transactionsSnapshot = await db.collection('transactions').get();
+        const totalTransactions = transactionsSnapshot.size;
+        
+        // Update display
+        const totalUsersElement = document.getElementById('totalUsers');
+        const pendingUsersElement = document.getElementById('pendingUsers');
+        const totalTransactionsElement = document.getElementById('totalTransactions');
+        
+        if (totalUsersElement) totalUsersElement.textContent = totalUsers;
+        if (pendingUsersElement) pendingUsersElement.textContent = pendingUsers;
+        if (totalTransactionsElement) totalTransactionsElement.textContent = totalTransactions;
         
     } catch (error) {
-        console.error('Error switching role:', error);
-        showNotification('error', 'Gagal mengubah peran');
+        console.error('Error updating admin stats:', error);
+    }
+}
+
+async function downloadAllData() {
+    if (!currentUser || currentUser.role !== 'admin') {
+        showNotification('error', 'Akses ditolak. Hanya admin yang dapat mengunduh semua data.');
+        return;
+    }
+    
+    try {
+        const db = firebase.firestore();
+        
+        // Get all transactions
+        const transactionsSnapshot = await db.collection('transactions').get();
+        const allTransactions = [];
+        transactionsSnapshot.forEach(doc => {
+            allTransactions.push({ id: doc.id, ...doc.data() });
+        });
+        
+        // Get all users (excluding sensitive data)
+        const usersSnapshot = await db.collection('users').get();
+        const allUsers = [];
+        usersSnapshot.forEach(doc => {
+            const userData = doc.data();
+            allUsers.push({
+                id: doc.id,
+                displayName: userData.displayName,
+                email: userData.email,
+                role: userData.role,
+                status: userData.status,
+                createdAt: userData.createdAt
+            });
+        });
+        
+        // Create export data
+        const exportData = {
+            exportDate: new Date().toISOString(),
+            exportedBy: currentUser.email,
+            users: allUsers,
+            transactions: allTransactions
+        };
+        
+        // Download as JSON file
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `keuangan_158a_backup_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        showNotification('success', 'Data berhasil diunduh!');
+        
+    } catch (error) {
+        console.error('Error downloading data:', error);
+        showNotification('error', 'Gagal mengunduh data. Silakan coba lagi.');
+    }
+}
+
+// ===== PREFERENCES SYSTEM =====
+
+// Default preferences
+const DEFAULT_PREFERENCES = {
+    theme: 'light',
+    currency: 'IDR',
+    showDecimals: true,
+    language: 'id',
+    successNotifications: true,
+    notificationSounds: false,
+    autoBackup: true
+};
+
+// Currency symbols and formats
+const CURRENCY_CONFIG = {
+    IDR: { symbol: 'Rp', locale: 'id-ID', decimals: 0 },
+    USD: { symbol: '$', locale: 'en-US', decimals: 2 },
+    EUR: { symbol: '€', locale: 'de-DE', decimals: 2 },
+    JPY: { symbol: '¥', locale: 'ja-JP', decimals: 0 },
+    SGD: { symbol: 'S$', locale: 'en-SG', decimals: 2 },
+    MYR: { symbol: 'RM', locale: 'ms-MY', decimals: 2 }
+};
+
+function initializePreferences() {
+    // Load saved preferences or use defaults
+    loadPreferences();
+    
+    // Setup event listeners for preferences
+    setupPreferencesEventListeners();
+    
+    // Apply current preferences
+    applyPreferences();
+}
+
+function loadPreferences() {
+    const saved = localStorage.getItem('userPreferences');
+    if (saved) {
+        try {
+            const preferences = JSON.parse(saved);
+            // Merge with defaults to ensure all properties exist
+            window.userPreferences = { ...DEFAULT_PREFERENCES, ...preferences };
+        } catch (error) {
+            console.error('Error loading preferences:', error);
+            window.userPreferences = { ...DEFAULT_PREFERENCES };
+        }
+    } else {
+        window.userPreferences = { ...DEFAULT_PREFERENCES };
+    }
+    
+    // Update UI to reflect current preferences
+    updatePreferencesUI();
+}
+
+function updatePreferencesUI() {
+    const preferences = window.userPreferences;
+    
+    // Theme
+    document.querySelector(`input[name="theme"][value="${preferences.theme}"]`).checked = true;
+    
+    // Currency
+    const currencySelect = document.getElementById('currencySelect');
+    if (currencySelect) currencySelect.value = preferences.currency;
+    
+    // Show decimals
+    const showDecimalsToggle = document.getElementById('showDecimals');
+    if (showDecimalsToggle) showDecimalsToggle.checked = preferences.showDecimals;
+    
+    // Language
+    const languageSelect = document.getElementById('languageSelect');
+    if (languageSelect) languageSelect.value = preferences.language;
+    
+    // Notifications
+    const successNotificationsToggle = document.getElementById('successNotifications');
+    if (successNotificationsToggle) successNotificationsToggle.checked = preferences.successNotifications;
+    
+    const notificationSoundsToggle = document.getElementById('notificationSounds');
+    if (notificationSoundsToggle) notificationSoundsToggle.checked = preferences.notificationSounds;
+    
+    // Auto backup
+    const autoBackupToggle = document.getElementById('autoBackup');
+    if (autoBackupToggle) autoBackupToggle.checked = preferences.autoBackup;
+    
+    // Update currency example
+    updateCurrencyExample();
+}
+
+function updateCurrencyExample() {
+    const preferences = window.userPreferences;
+    const config = CURRENCY_CONFIG[preferences.currency];
+    const amount = 1000000;
+    
+    let formatted;
+    if (preferences.showDecimals && config.decimals > 0) {
+        formatted = new Intl.NumberFormat(config.locale, {
+            style: 'currency',
+            currency: preferences.currency,
+            minimumFractionDigits: config.decimals,
+            maximumFractionDigits: config.decimals
+        }).format(amount);
+    } else {
+        formatted = new Intl.NumberFormat(config.locale, {
+            style: 'currency',
+            currency: preferences.currency,
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(amount);
+    }
+    
+    const exampleElement = document.getElementById('currencyExample');
+    if (exampleElement) {
+        exampleElement.textContent = formatted;
+    }
+}
+
+function setupPreferencesEventListeners() {
+    // Save preferences button
+    const saveBtn = document.getElementById('savePreferences');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', savePreferences);
+    }
+    
+    // Reset preferences button
+    const resetBtn = document.getElementById('resetPreferences');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', resetPreferences);
+    }
+    
+    // Export personal data button
+    const exportBtn = document.getElementById('exportPersonalData');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', exportPersonalData);
+    }
+    
+    // Theme change
+    const themeInputs = document.querySelectorAll('input[name="theme"]');
+    themeInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            if (this.checked) {
+                applyTheme(this.value);
+            }
+        });
+    });
+    
+    // Currency change
+    const currencySelect = document.getElementById('currencySelect');
+    if (currencySelect) {
+        currencySelect.addEventListener('change', function() {
+            window.userPreferences.currency = this.value;
+            updateCurrencyExample();
+        });
+    }
+    
+    // Show decimals toggle
+    const showDecimalsToggle = document.getElementById('showDecimals');
+    if (showDecimalsToggle) {
+        showDecimalsToggle.addEventListener('change', function() {
+            window.userPreferences.showDecimals = this.checked;
+            updateCurrencyExample();
+        });
+    }
+}
+
+function applyPreferences() {
+    const preferences = window.userPreferences;
+    
+    // Apply theme
+    applyTheme(preferences.theme);
+    
+    // Apply language (basic implementation)
+    applyLanguage(preferences.language);
+}
+
+function applyTheme(theme) {
+    const body = document.body;
+    
+    // Remove existing theme classes
+    body.classList.remove('dark-theme', 'light-theme');
+    
+    if (theme === 'dark') {
+        body.classList.add('dark-theme');
+    } else if (theme === 'light') {
+        body.classList.add('light-theme');
+    } else if (theme === 'auto') {
+        // Auto theme based on system preference
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (prefersDark) {
+            body.classList.add('dark-theme');
+        } else {
+            body.classList.add('light-theme');
+        }
+    }
+}
+
+function applyLanguage(language) {
+    // Basic language application
+    // In a real app, this would involve loading language files
+    // For now, we'll just update the document language attribute
+    document.documentElement.lang = language;
+}
+
+function savePreferences() {
+    try {
+        // Gather all current preferences from form
+        const preferences = {
+            theme: document.querySelector('input[name="theme"]:checked').value,
+            currency: document.getElementById('currencySelect').value,
+            showDecimals: document.getElementById('showDecimals').checked,
+            language: document.getElementById('languageSelect').value,
+            successNotifications: document.getElementById('successNotifications').checked,
+            notificationSounds: document.getElementById('notificationSounds').checked,
+            autoBackup: document.getElementById('autoBackup').checked
+        };
+        
+        // Save to localStorage
+        localStorage.setItem('userPreferences', JSON.stringify(preferences));
+        window.userPreferences = preferences;
+        
+        // Apply new preferences
+        applyPreferences();
+        
+        // Save to Firestore if user is logged in
+        if (currentUser) {
+            const db = firebase.firestore();
+            db.collection('users').doc(currentUser.uid).update({
+                preferences: preferences,
+                preferencesUpdatedAt: new Date().toISOString()
+            }).catch(error => {
+                console.error('Error saving preferences to Firestore:', error);
+            });
+        }
+        
+        showNotification('success', 'Pengaturan berhasil disimpan!');
+        
+    } catch (error) {
+        console.error('Error saving preferences:', error);
+        showNotification('error', 'Gagal menyimpan pengaturan. Silakan coba lagi.');
+    }
+}
+
+function resetPreferences() {
+    if (!confirm('Apakah Anda yakin ingin mengembalikan semua pengaturan ke default?')) {
+        return;
+    }
+    
+    try {
+        // Reset to defaults
+        window.userPreferences = { ...DEFAULT_PREFERENCES };
+        
+        // Update UI
+        updatePreferencesUI();
+        
+        // Apply preferences
+        applyPreferences();
+        
+        // Save to localStorage
+        localStorage.setItem('userPreferences', JSON.stringify(window.userPreferences));
+        
+        // Save to Firestore if user is logged in
+        if (currentUser) {
+            const db = firebase.firestore();
+            db.collection('users').doc(currentUser.uid).update({
+                preferences: window.userPreferences,
+                preferencesUpdatedAt: new Date().toISOString()
+            }).catch(error => {
+                console.error('Error saving preferences to Firestore:', error);
+            });
+        }
+        
+        showNotification('success', 'Pengaturan berhasil direset ke default!');
+        
+    } catch (error) {
+        console.error('Error resetting preferences:', error);
+        showNotification('error', 'Gagal mereset pengaturan. Silakan coba lagi.');
+    }
+}
+
+async function exportPersonalData() {
+    if (!currentUser) {
+        showNotification('error', 'Anda harus login untuk mengexport data.');
+        return;
+    }
+    
+    try {
+        const db = firebase.firestore();
+        
+        // Get user's transactions
+        const transactionsSnapshot = await db.collection('transactions')
+            .where('userId', '==', currentUser.uid)
+            .get();
+        
+        const userTransactions = [];
+        transactionsSnapshot.forEach(doc => {
+            userTransactions.push({ id: doc.id, ...doc.data() });
+        });
+        
+        // Get user profile
+        const userDoc = await db.collection('users').doc(currentUser.uid).get();
+        const userProfile = userDoc.exists ? userDoc.data() : {};
+        
+        // Create export data
+        const exportData = {
+            exportDate: new Date().toISOString(),
+            userProfile: {
+                email: userProfile.email,
+                displayName: userProfile.displayName,
+                role: userProfile.role,
+                createdAt: userProfile.createdAt,
+                preferences: userProfile.preferences || window.userPreferences
+            },
+            transactions: userTransactions,
+            summary: {
+                totalTransactions: userTransactions.length,
+                totalIncome: userTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0),
+                totalExpense: userTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0)
+            }
+        };
+        
+        // Download as JSON file
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `data_pribadi_${currentUser.email}_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        showNotification('success', 'Data pribadi berhasil diunduh!');
+        
+    } catch (error) {
+        console.error('Error exporting personal data:', error);
+        showNotification('error', 'Gagal mengexport data pribadi. Silakan coba lagi.');
     }
 }
 
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
-    const container = document.querySelector('.container');
+    const mainContent = document.querySelector('.main-content');
+    const body = document.body;
     
-    if (sidebar && container) {
-        sidebar.classList.toggle('collapsed');
-        container.classList.toggle('sidebar-collapsed');
+    if (sidebar) {
+        const isCollapsed = sidebar.classList.contains('collapsed');
+        
+        if (isCollapsed) {
+            // Expand sidebar
+            sidebar.classList.remove('collapsed');
+            body.classList.remove('sidebar-collapsed');
+            if (mainContent) {
+                mainContent.style.marginLeft = '280px';
+            }
+        } else {
+            // Collapse sidebar
+            sidebar.classList.add('collapsed');
+            body.classList.add('sidebar-collapsed');
+            if (mainContent) {
+                mainContent.style.marginLeft = '80px';
+            }
+        }
+        
+        // Update toggle button icon
+        const toggleButton = sidebar.querySelector('.sidebar-toggle i');
+        if (toggleButton) {
+            if (sidebar.classList.contains('collapsed')) {
+                toggleButton.className = 'fas fa-bars'; // Hamburger icon when collapsed
+            } else {
+                toggleButton.className = 'fas fa-times'; // X icon when expanded
+            }
+        }
     }
 }
 
@@ -363,18 +910,121 @@ function updateCategories() {
     }
 }
 
+// Initialize Date Dropdowns
+function initializeDateDropdowns() {
+    const today = new Date();
+    const currentDay = today.getDate();
+    const currentMonth = today.getMonth() + 1;
+    const currentYear = today.getFullYear();
+    
+    // Populate day dropdown
+    const daySelect = document.getElementById('transactionDay');
+    if (daySelect) {
+        for (let i = 1; i <= 31; i++) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = i;
+            if (i === currentDay) {
+                option.selected = true;
+            }
+            daySelect.appendChild(option);
+        }
+    }
+    
+    // Set current month as selected
+    const monthSelect = document.getElementById('transactionMonth');
+    if (monthSelect) {
+        monthSelect.value = currentMonth;
+    }
+    
+    // Populate year dropdown (current year and previous 5 years)
+    const yearSelect = document.getElementById('transactionYear');
+    if (yearSelect) {
+        for (let year = currentYear; year >= currentYear - 5; year--) {
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = year;
+            if (year === currentYear) {
+                option.selected = true;
+            }
+            yearSelect.appendChild(option);
+        }
+    }
+}
+
+// Initialize Currency Input
+function initializeCurrencyInput() {
+    const amountInput = document.getElementById('amount');
+    if (amountInput) {
+        amountInput.addEventListener('input', formatCurrencyInput);
+        amountInput.addEventListener('keypress', function(e) {
+            // Hanya izinkan angka, koma, dan titik
+            const allowedKeys = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', ',', 'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'];
+            if (!allowedKeys.includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+    }
+}
+
+// Format Currency Input
+function formatCurrencyInput(event) {
+    let value = event.target.value;
+    
+    // Hapus semua karakter selain angka
+    value = value.replace(/[^\d]/g, '');
+    
+    if (value === '') {
+        event.target.value = '';
+        return;
+    }
+    
+    // Format dengan pemisah ribuan
+    const formatted = parseInt(value).toLocaleString('id-ID');
+    event.target.value = formatted;
+}
+
+// Parse Currency Value
+function parseCurrencyValue(value) {
+    if (!value) return 0;
+    // Hapus semua karakter selain angka
+    return parseInt(value.replace(/[^\d]/g, '')) || 0;
+}
+
 async function handleEntrySubmit(event) {
     event.preventDefault();
     
     const formData = new FormData(event.target);
+    
+    // Construct date from dropdowns
+    const day = formData.get('transactionDay');
+    const month = formData.get('transactionMonth');
+    const year = formData.get('transactionYear');
+    
+    if (!day || !month || !year) {
+        showNotification('error', 'Silakan lengkapi tanggal transaksi.');
+        return;
+    }
+    
+    const transactionDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    
+    // Parse currency amount
+    const amountInput = document.getElementById('amount');
+    const amount = parseCurrencyValue(amountInput.value);
+    
+    if (amount <= 0) {
+        showNotification('error', 'Jumlah transaksi harus lebih besar dari 0.');
+        return;
+    }
+    
     const transaction = {
-        id: Date.now().toString(),
         type: formData.get('cashflowType'),
-        date: formData.get('transactionDate'),
+        date: transactionDate,
         category: formData.get('category'),
-        amount: parseFloat(formData.get('amount')),
-        description: formData.get('description'),
+        amount: amount,
+        description: formData.get('description') || '',
         userId: currentUser.uid,
+        userName: currentUser.displayName || currentUser.email,
         createdAt: new Date().toISOString()
     };
     
@@ -401,11 +1051,20 @@ function resetEntryForm() {
     if (form) {
         form.reset();
         
-        // Reset date to today
-        const today = new Date().toISOString().split('T')[0];
-        const dateInput = document.getElementById('transactionDate');
-        if (dateInput) {
-            dateInput.value = today;
+        // Reset date dropdowns to today
+        const today = new Date();
+        const daySelect = document.getElementById('transactionDay');
+        const monthSelect = document.getElementById('transactionMonth');
+        const yearSelect = document.getElementById('transactionYear');
+        
+        if (daySelect) daySelect.value = today.getDate();
+        if (monthSelect) monthSelect.value = today.getMonth() + 1;
+        if (yearSelect) yearSelect.value = today.getFullYear();
+        
+        // Clear amount input
+        const amountInput = document.getElementById('amount');
+        if (amountInput) {
+            amountInput.value = '';
         }
         
         // Clear categories
@@ -585,42 +1244,285 @@ function updateUsersTable() {
         return;
     }
     
+    // Separate users by status for better organization
+    const pendingUsers = users.filter(user => user.status === 'pending');
+    const approvedUsers = users.filter(user => user.status === 'approved');
+    const rejectedUsers = users.filter(user => user.status === 'rejected');
+    
     container.innerHTML = `
-        <div class="users-table">
-            <div class="table-header">
-                <div class="table-cell">Nama</div>
-                <div class="table-cell">Email</div>
-                <div class="table-cell">Peran</div>
-                <div class="table-cell">Bergabung</div>
-                <div class="table-cell">Aksi</div>
-            </div>
-            ${users.map(user => `
-                <div class="table-row">
-                    <div class="table-cell">
-                        <div class="user-info">
-                            <div class="user-avatar-small">${user.displayName?.charAt(0) || 'U'}</div>
-                            <span>${user.displayName || 'Unknown'}</span>
+        ${pendingUsers.length > 0 ? `
+            <div class="users-section">
+                <h3 class="section-title">
+                    <i class="fas fa-clock"></i>
+                    Menunggu Persetujuan (${pendingUsers.length})
+                </h3>
+                <div class="users-table">
+                    <div class="table-header">
+                        <div class="table-cell">Nama</div>
+                        <div class="table-cell">Email</div>
+                        <div class="table-cell">Role Diminta</div>
+                        <div class="table-cell">Tanggal Daftar</div>
+                        <div class="table-cell">Aksi</div>
+                    </div>
+                    ${pendingUsers.map(user => `
+                        <div class="table-row pending-user">
+                            <div class="table-cell">
+                                <div class="user-info">
+                                    <div class="user-avatar-small">${user.displayName?.charAt(0) || 'U'}</div>
+                                    <span>${user.displayName || 'Unknown'}</span>
+                                </div>
+                            </div>
+                            <div class="table-cell">${user.email}</div>
+                            <div class="table-cell">
+                                <span class="role-badge ${user.requestedRole}">${user.requestedRole}</span>
+                            </div>
+                            <div class="table-cell">${formatDate(user.createdAt)}</div>
+                            <div class="table-cell">
+                                <div class="action-buttons">
+                                    <button class="btn btn-success btn-sm" onclick="approveUser('${user.id}', '${user.requestedRole}')">
+                                        <i class="fas fa-check"></i> Setujui
+                                    </button>
+                                    <button class="btn btn-danger btn-sm" onclick="rejectUser('${user.id}')">
+                                        <i class="fas fa-times"></i> Tolak
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="table-cell">${user.email}</div>
-                    <div class="table-cell">
-                        <span class="role-badge ${user.role}">${user.role}</span>
-                    </div>
-                    <div class="table-cell">${formatDate(user.createdAt)}</div>
-                    <div class="table-cell">
-                        <div class="action-buttons">
-                            <button class="btn-icon" onclick="editUser('${user.id}')">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn-icon" onclick="deleteUser('${user.id}')">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
+                    `).join('')}
                 </div>
-            `).join('')}
-        </div>
+            </div>
+        ` : ''}
+        
+        ${approvedUsers.length > 0 ? `
+            <div class="users-section">
+                <h3 class="section-title">
+                    <i class="fas fa-users"></i>
+                    Pengguna Aktif (${approvedUsers.length})
+                </h3>
+                <div class="users-table">
+                    <div class="table-header">
+                        <div class="table-cell">Nama</div>
+                        <div class="table-cell">Email</div>
+                        <div class="table-cell">Peran</div>
+                        <div class="table-cell">Bergabung</div>
+                        <div class="table-cell">Aksi</div>
+                    </div>
+                    ${approvedUsers.map(user => `
+                        <div class="table-row">
+                            <div class="table-cell">
+                                <div class="user-info">
+                                    <div class="user-avatar-small">${user.displayName?.charAt(0) || 'U'}</div>
+                                    <span>${user.displayName || 'Unknown'}</span>
+                                </div>
+                            </div>
+                            <div class="table-cell">${user.email}</div>
+                            <div class="table-cell">
+                                <span class="role-badge ${user.role}">${user.role}</span>
+                            </div>
+                            <div class="table-cell">${formatDate(user.createdAt)}</div>
+                            <div class="table-cell">
+                                <div class="action-buttons">
+                                    <button class="btn-icon" onclick="editUser('${user.id}')" title="Edit User">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-icon" onclick="resetUserPassword('${user.id}')" title="Reset Password">
+                                        <i class="fas fa-key"></i>
+                                    </button>
+                                    <button class="btn-icon ${user.isActive === false ? 'btn-success' : 'btn-warning'}" 
+                                            onclick="toggleUserStatus('${user.id}')" 
+                                            title="${user.isActive === false ? 'Aktifkan' : 'Nonaktifkan'} User">
+                                        <i class="fas fa-${user.isActive === false ? 'user-check' : 'user-slash'}"></i>
+                                    </button>
+                                    <button class="btn-icon btn-danger" onclick="deleteUser('${user.id}')" title="Hapus User">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : ''}
+        
+        ${rejectedUsers.length > 0 ? `
+            <div class="users-section">
+                <h3 class="section-title">
+                    <i class="fas fa-user-times"></i>
+                    Pengguna Ditolak (${rejectedUsers.length})
+                </h3>
+                <div class="users-table">
+                    <div class="table-header">
+                        <div class="table-cell">Nama</div>
+                        <div class="table-cell">Email</div>
+                        <div class="table-cell">Role Diminta</div>
+                        <div class="table-cell">Ditolak Tanggal</div>
+                        <div class="table-cell">Aksi</div>
+                    </div>
+                    ${rejectedUsers.map(user => `
+                        <div class="table-row rejected-user">
+                            <div class="table-cell">
+                                <div class="user-info">
+                                    <div class="user-avatar-small">${user.displayName?.charAt(0) || 'U'}</div>
+                                    <span>${user.displayName || 'Unknown'}</span>
+                                </div>
+                            </div>
+                            <div class="table-cell">${user.email}</div>
+                            <div class="table-cell">
+                                <span class="role-badge ${user.requestedRole}">${user.requestedRole}</span>
+                            </div>
+                            <div class="table-cell">${formatDate(user.rejectedAt || user.createdAt)}</div>
+                            <div class="table-cell">
+                                <div class="action-buttons">
+                                    <button class="btn btn-primary btn-sm" onclick="approveUser('${user.id}', '${user.requestedRole}')">
+                                        <i class="fas fa-undo"></i> Setujui Ulang
+                                    </button>
+                                    <button class="btn-icon btn-danger" onclick="deleteUser('${user.id}')" title="Hapus User">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : ''}
+        
+        ${pendingUsers.length === 0 && approvedUsers.length === 0 && rejectedUsers.length === 0 ? `
+            <div class="empty-state">
+                <i class="fas fa-users"></i>
+                <p>Belum ada pengguna terdaftar</p>
+            </div>
+        ` : ''}
     `;
+}
+
+// User Management Functions
+async function approveUser(userId, requestedRole) {
+    if (!currentUser || currentUser.role !== 'admin') {
+        showNotification('error', 'Akses ditolak. Hanya admin yang dapat menyetujui pengguna.');
+        return;
+    }
+    
+    try {
+        const db = firebase.firestore();
+        
+        // Ambil data user untuk mendapatkan email dan password
+        const userDoc = await db.collection('users').doc(userId).get();
+        if (!userDoc.exists) {
+            showNotification('error', 'User tidak ditemukan.');
+            return;
+        }
+        
+        const userData = userDoc.data();
+        
+        // Update status user di Firestore
+        await db.collection('users').doc(userId).update({
+            status: 'approved',
+            role: requestedRole,
+            approvedAt: new Date().toISOString(),
+            approvedBy: currentUser.uid
+        });
+        
+        // Create Firebase Auth account for approved user
+        // Note: In a real app, you'd use Firebase Admin SDK on the server side
+        // For this demo, we'll just update Firestore
+        
+        showNotification('success', `User ${userData.displayName} berhasil disetujui sebagai ${requestedRole}.`);
+        loadUsers(); // Refresh users list
+        
+    } catch (error) {
+        console.error('Error approving user:', error);
+        showNotification('error', 'Gagal menyetujui user. Silakan coba lagi.');
+    }
+}
+
+async function rejectUser(userId) {
+    if (!currentUser || currentUser.role !== 'admin') {
+        showNotification('error', 'Akses ditolak. Hanya admin yang dapat menolak pengguna.');
+        return;
+    }
+    
+    if (!confirm('Apakah Anda yakin ingin menolak pendaftaran user ini?')) {
+        return;
+    }
+    
+    try {
+        const db = firebase.firestore();
+        
+        await db.collection('users').doc(userId).update({
+            status: 'rejected',
+            rejectedAt: new Date().toISOString(),
+            rejectedBy: currentUser.uid
+        });
+        
+        showNotification('success', 'User berhasil ditolak.');
+        loadUsers(); // Refresh users list
+        
+    } catch (error) {
+        console.error('Error rejecting user:', error);
+        showNotification('error', 'Gagal menolak user. Silakan coba lagi.');
+    }
+}
+
+async function toggleUserStatus(userId) {
+    if (!currentUser || currentUser.role !== 'admin') {
+        showNotification('error', 'Akses ditolak. Hanya admin yang dapat mengubah status pengguna.');
+        return;
+    }
+    
+    try {
+        const db = firebase.firestore();
+        const userDoc = await db.collection('users').doc(userId).get();
+        
+        if (!userDoc.exists) {
+            showNotification('error', 'User tidak ditemukan.');
+            return;
+        }
+        
+        const userData = userDoc.data();
+        const newStatus = userData.isActive === false ? true : false;
+        
+        await db.collection('users').doc(userId).update({
+            isActive: newStatus,
+            lastUpdatedBy: currentUser.uid,
+            lastUpdatedAt: new Date().toISOString()
+        });
+        
+        showNotification('success', `User berhasil ${newStatus ? 'diaktifkan' : 'dinonaktifkan'}.`);
+        loadUsers(); // Refresh users list
+        
+    } catch (error) {
+        console.error('Error toggling user status:', error);
+        showNotification('error', 'Gagal mengubah status user. Silakan coba lagi.');
+    }
+}
+
+async function resetUserPassword(userId) {
+    if (!currentUser || currentUser.role !== 'admin') {
+        showNotification('error', 'Akses ditolak. Hanya admin yang dapat reset password.');
+        return;
+    }
+    
+    try {
+        const db = firebase.firestore();
+        const userDoc = await db.collection('users').doc(userId).get();
+        
+        if (!userDoc.exists) {
+            showNotification('error', 'User tidak ditemukan.');
+            return;
+        }
+        
+        const userData = userDoc.data();
+        
+        // Send password reset email using Firebase Auth
+        await firebase.auth().sendPasswordResetEmail(userData.email);
+        
+        showNotification('success', `Email reset password telah dikirim ke ${userData.email}.`);
+        
+    } catch (error) {
+        console.error('Error resetting password:', error);
+        showNotification('error', 'Gagal mengirim email reset password. Silakan coba lagi.');
+    }
 }
 
 function handleTabSwitch(event) {
