@@ -1,27 +1,11 @@
-// Login System JavaScript with Security and Role Management
-
-// User Database (In production, this would be server-side)
-const USER_DATABASE = {
-    'anto': {
-        password: 'anto', // In production, this would be hashed
-        roles: ['admin', 'user'],
-        profile: {
-            name: 'Anto',
-            email: 'anto@kelasguru.com',
-            lastLogin: null,
-            loginAttempts: 0,
-            isLocked: false,
-            lockUntil: null
-        }
-    }
-};
+// Firebase Authentication Login System
 
 // Security Configuration
 const SECURITY_CONFIG = {
     maxLoginAttempts: 3,
     lockoutDuration: 15 * 60 * 1000, // 15 minutes
     sessionTimeout: 30 * 60 * 1000, // 30 minutes
-    passwordMinLength: 4,
+    passwordMinLength: 6,
     enableBruteForceProtection: true
 };
 
@@ -38,7 +22,7 @@ const ROLE_PERMISSIONS = {
             'manage_content',
             'view_analytics'
         ],
-        dashboardUrl: '..//pages/index.html'
+        dashboardUrl: './index.html'
     },
     user: {
         name: 'User',
@@ -49,7 +33,7 @@ const ROLE_PERMISSIONS = {
             'view_grades',
             'update_profile'
         ],
-        dashboardUrl: '..//pages/index.html'
+        dashboardUrl: './index.html'
     }
 };
 
@@ -79,10 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initializeApp() {
-    console.log('Login System initialized');
-    
-    // Check for locked accounts
-    checkAccountLockStatus();
+    console.log('Firebase Login System initialized');
     
     // Setup form validation
     setupFormValidation();
@@ -92,6 +73,23 @@ function initializeApp() {
     
     // Setup role information
     populateRoleInfo();
+    
+    // Check Firebase Auth state
+    firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+            console.log('User is signed in:', user);
+            // User is signed in, redirect to dashboard if not already there
+            if (window.location.pathname.includes('login.html')) {
+                const savedRole = localStorage.getItem('userRole') || 'user';
+                redirectToDashboard(savedRole);
+            }
+        } else {
+            console.log('User is signed out');
+            // User is signed out, clear any stored data
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('userRole');
+        }
+    });
 }
 
 function setupEventListeners() {
@@ -99,29 +97,45 @@ function setupEventListeners() {
     loginForm.addEventListener('submit', handleLogin);
     
     // Password toggle
-    togglePasswordBtn.addEventListener('click', togglePasswordVisibility);
+    if (togglePasswordBtn) {
+        togglePasswordBtn.addEventListener('click', togglePasswordVisibility);
+    }
     
     // Role selection change
-    roleSelect.addEventListener('change', handleRoleChange);
+    if (roleSelect) {
+        roleSelect.addEventListener('change', handleRoleChange);
+    }
     
     // Close role info panel
-    closePanelBtn.addEventListener('click', closeRoleInfoPanel);
+    if (closePanelBtn) {
+        closePanelBtn.addEventListener('click', closeRoleInfoPanel);
+    }
     
     // Input validation
-    usernameInput.addEventListener('input', validateUsername);
-    passwordInput.addEventListener('input', validatePassword);
+    if (usernameInput) {
+        usernameInput.addEventListener('input', validateUsername);
+    }
+    if (passwordInput) {
+        passwordInput.addEventListener('input', validatePassword);
+    }
     
     // Forgot password link
     const forgotPasswordLink = document.querySelector('.forgot-password');
-    forgotPasswordLink.addEventListener('click', handleForgotPassword);
+    if (forgotPasswordLink) {
+        forgotPasswordLink.addEventListener('click', handleForgotPassword);
+    }
     
     // Register link
     const registerLink = document.querySelector('.register-link');
-    registerLink.addEventListener('click', handleRegister);
+    if (registerLink) {
+        registerLink.addEventListener('click', handleRegister);
+    }
     
     // Remember me checkbox
     const rememberMeCheckbox = document.getElementById('rememberMe');
-    rememberMeCheckbox.addEventListener('change', handleRememberMe);
+    if (rememberMeCheckbox) {
+        rememberMeCheckbox.addEventListener('change', handleRememberMe);
+    }
     
     // Keyboard shortcuts
     document.addEventListener('keydown', handleKeyboardShortcuts);
@@ -130,7 +144,7 @@ function setupEventListeners() {
 async function handleLogin(event) {
     event.preventDefault();
     
-    const username = usernameInput.value.trim();
+    const email = usernameInput.value.trim();
     const password = passwordInput.value;
     const selectedRole = roleSelect.value;
     
@@ -139,161 +153,242 @@ async function handleLogin(event) {
     
     try {
         // Validate inputs
-        if (!validateInputs(username, password, selectedRole)) {
+        if (!validateInputs(email, password, selectedRole)) {
             return;
         }
         
-        // Check account lock status
-        if (isAccountLocked(username)) {
-            throw new Error('Akun terkunci karena terlalu banyak percobaan login yang gagal. Silakan coba lagi nanti.');
+        // Check for too many attempts
+        if (loginAttempts >= SECURITY_CONFIG.maxLoginAttempts) {
+            throw new Error('Terlalu banyak percobaan login. Silakan tunggu beberapa menit.');
         }
         
-        // Simulate network delay for realistic experience
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Use Firebase Authentication to sign in
+        const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+        const user = userCredential.user;
         
-        // Authenticate user
-        const authResult = authenticateUser(username, password, selectedRole);
+        console.log('User logged in:', user);
         
-        if (authResult.success) {
-            // Reset login attempts
-            resetLoginAttempts(username);
-            
-            // Create session
-            createUserSession(authResult.user, selectedRole);
-            
-            // Show success message
-            showSuccessMessage(`Login berhasil! Selamat datang, ${authResult.user.profile.name}`);
-            
-            // Redirect after delay
-            setTimeout(() => {
-                redirectToDashboard(selectedRole);
-            }, 2000);
-            
-        } else {
-            // Handle failed login
-            handleFailedLogin(username, authResult.error);
-        }
+        // Reset login attempts on successful login
+        loginAttempts = 0;
+        
+        // Save user information and role to localStorage
+        const userData = {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName || email.split('@')[0],
+            role: selectedRole,
+            loginTime: new Date().toISOString()
+        };
+        
+        // Simpan data dengan format yang diharapkan oleh kedua sistem
+        localStorage.setItem('currentUser', JSON.stringify(userData));
+        localStorage.setItem('userRole', selectedRole);
+        
+        // Format untuk script.js di halaman utama
+        const sessionData = {
+            username: userData.displayName,
+            email: userData.email,
+            role: selectedRole,
+            loginTime: new Date().toISOString(),
+            uid: user.uid
+        };
+        
+        localStorage.setItem('userSession', JSON.stringify(sessionData));
+        localStorage.setItem('currentRole', selectedRole);
+        
+        // Show success message
+        showSuccessMessage(`Login berhasil! Selamat datang, ${userData.displayName}!`);
+        
+        // Start session timer
+        startSessionTimer();
+        
+        // Redirect to dashboard after delay
+        setTimeout(() => {
+            redirectToDashboard(selectedRole);
+        }, 2000);
         
     } catch (error) {
-        showErrorMessage(error.message);
+        console.error('Login error:', error);
+        
+        // Increment login attempts
+        loginAttempts++;
+        
+        // Handle different error types
+        let displayMessage = 'Login gagal. Silakan coba lagi.';
+        
+        switch (error.code) {
+            case 'auth/user-not-found':
+                displayMessage = 'Email tidak terdaftar. Silakan daftar terlebih dahulu.';
+                break;
+            case 'auth/wrong-password':
+                displayMessage = 'Password salah. Silakan coba lagi.';
+                break;
+            case 'auth/invalid-email':
+                displayMessage = 'Format email tidak valid.';
+                break;
+            case 'auth/user-disabled':
+                displayMessage = 'Akun Anda telah dinonaktifkan. Hubungi administrator.';
+                break;
+            case 'auth/too-many-requests':
+                displayMessage = 'Terlalu banyak percobaan login. Silakan tunggu beberapa menit.';
+                break;
+            default:
+                displayMessage = error.message || 'Terjadi kesalahan. Silakan coba lagi.';
+        }
+        
+        const remainingAttempts = SECURITY_CONFIG.maxLoginAttempts - loginAttempts;
+        if (remainingAttempts > 0) {
+            displayMessage += ` Sisa percobaan: ${remainingAttempts}`;
+        }
+        
+        showErrorMessage(displayMessage);
+        
+        // Add progressive delay for repeated attempts
+        if (loginAttempts > 1) {
+            const delay = Math.min(loginAttempts * 1000, 5000);
+            loginBtn.disabled = true;
+            
+            setTimeout(() => {
+                loginBtn.disabled = false;
+            }, delay);
+        }
+        
     } finally {
         setLoadingState(false);
     }
 }
 
-function authenticateUser(username, password, role) {
-    const user = USER_DATABASE[username.toLowerCase()];
-    
-    if (!user) {
-        return { success: false, error: 'Username tidak ditemukan' };
-    }
-    
-    if (user.password !== password) {
-        return { success: false, error: 'Password salah' };
-    }
-    
-    if (!user.roles.includes(role)) {
-        return { success: false, error: 'Anda tidak memiliki akses untuk peran ini' };
-    }
-    
-    // Update last login
-    user.profile.lastLogin = new Date().toISOString();
-    
-    return { success: true, user: user };
-}
-
-function createUserSession(user, role) {
-    const sessionData = {
-        username: Object.keys(USER_DATABASE).find(key => USER_DATABASE[key] === user),
-        role: role,
-        loginTime: new Date().toISOString(),
-        permissions: ROLE_PERMISSIONS[role].permissions
-    };
-    
-    // Store session data
-    localStorage.setItem('userSession', JSON.stringify(sessionData));
-    sessionStorage.setItem('currentRole', role);
-    
-    // Set session timeout
-    startSessionTimer();
-    
-    currentUser = sessionData;
-    
-    console.log('User session created:', sessionData);
-}
-
-function handleFailedLogin(username, error) {
-    if (SECURITY_CONFIG.enableBruteForceProtection) {
-        incrementLoginAttempts(username);
+// Sign Up Function (for new user registration)
+async function handleSignUp(email, password, displayName, role) {
+    try {
+        const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+        const user = userCredential.user;
         
-        const user = USER_DATABASE[username];
-        if (user) {
-            user.profile.loginAttempts++;
-            
-            if (user.profile.loginAttempts >= SECURITY_CONFIG.maxLoginAttempts) {
-                lockAccount(username);
-                showErrorMessage('Akun terkunci karena terlalu banyak percobaan login yang gagal.');
-                return;
-            }
+        // Update user profile with display name
+        await user.updateProfile({
+            displayName: displayName
+        });
+        
+        console.log('User registered:', user);
+        
+        // Save user information
+        const userData = {
+            uid: user.uid,
+            email: user.email,
+            displayName: displayName,
+            role: role,
+            loginTime: new Date().toISOString()
+        };
+        
+        localStorage.setItem('currentUser', JSON.stringify(userData));
+        localStorage.setItem('userRole', role);
+        
+        showSuccessMessage(`Registrasi berhasil! Selamat datang, ${displayName}!`);
+        
+        // Redirect to dashboard
+        setTimeout(() => {
+            redirectToDashboard(role);
+        }, 2000);
+        
+        return { success: true, user: userData };
+        
+    } catch (error) {
+        console.error('Registration error:', error);
+        
+        let displayMessage = 'Registrasi gagal. Silakan coba lagi.';
+        
+        switch (error.code) {
+            case 'auth/email-already-in-use':
+                displayMessage = 'Email sudah terdaftar. Silakan gunakan email lain atau login.';
+                break;
+            case 'auth/invalid-email':
+                displayMessage = 'Format email tidak valid.';
+                break;
+            case 'auth/weak-password':
+                displayMessage = 'Password terlalu lemah. Gunakan minimal 6 karakter.';
+                break;
+            default:
+                displayMessage = error.message || 'Terjadi kesalahan saat registrasi.';
         }
-    }
-    
-    const remainingAttempts = SECURITY_CONFIG.maxLoginAttempts - (USER_DATABASE[username]?.profile.loginAttempts || 0);
-    showErrorMessage(`${error}. Sisa percobaan: ${remainingAttempts}`);
-}
-
-function lockAccount(username) {
-    const user = USER_DATABASE[username];
-    if (user) {
-        user.profile.isLocked = true;
-        user.profile.lockUntil = new Date(Date.now() + SECURITY_CONFIG.lockoutDuration).toISOString();
+        
+        showErrorMessage(displayMessage);
+        return { success: false, error: displayMessage };
     }
 }
 
-function isAccountLocked(username) {
-    const user = USER_DATABASE[username];
-    if (!user || !user.profile.isLocked) return false;
+// Logout Function
+async function handleLogout() {
+    try {
+        await firebase.auth().signOut();
+        
+        // Clear semua data session
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('userSession');       // Data untuk script.js
+        localStorage.removeItem('currentRole');       // Data untuk script.js
+        localStorage.removeItem('rememberedUsername');
+        sessionStorage.clear();
+        
+        // Clear session timer
+        if (sessionTimer) {
+            clearTimeout(sessionTimer);
+        }
+        
+        console.log('User logged out');
+        
+        // Redirect to login page
+        window.location.href = './login.html';
+        
+    } catch (error) {
+        console.error('Logout error:', error);
+        showErrorMessage('Terjadi kesalahan saat logout.');
+    }
+}
+
+// Password Reset Function
+async function handleForgotPassword(event) {
+    if (event) event.preventDefault();
     
-    const lockUntil = new Date(user.profile.lockUntil);
-    const now = new Date();
+    const email = prompt('Masukkan email Anda untuk reset password:');
     
-    if (now > lockUntil) {
-        // Unlock account
-        user.profile.isLocked = false;
-        user.profile.lockUntil = null;
-        user.profile.loginAttempts = 0;
+    if (!email) {
+        return;
+    }
+    
+    try {
+        await firebase.auth().sendPasswordResetEmail(email);
+        showSuccessMessage('Email reset password telah dikirim. Silakan cek inbox Anda.');
+    } catch (error) {
+        console.error('Password reset error:', error);
+        
+        let displayMessage = 'Gagal mengirim email reset password.';
+        
+        switch (error.code) {
+            case 'auth/user-not-found':
+                displayMessage = 'Email tidak terdaftar.';
+                break;
+            case 'auth/invalid-email':
+                displayMessage = 'Format email tidak valid.';
+                break;
+            default:
+                displayMessage = error.message || 'Terjadi kesalahan.';
+        }
+        
+        showErrorMessage(displayMessage);
+    }
+}
+
+function validateInputs(email, password, role) {
+    if (!email) {
+        showErrorMessage('Email harus diisi');
+        usernameInput.focus();
         return false;
     }
     
-    return true;
-}
-
-function resetLoginAttempts(username) {
-    const user = USER_DATABASE[username];
-    if (user) {
-        user.profile.loginAttempts = 0;
-        user.profile.isLocked = false;
-        user.profile.lockUntil = null;
-    }
-}
-
-function incrementLoginAttempts(username) {
-    loginAttempts++;
-    
-    // Add progressive delay for repeated attempts
-    if (loginAttempts > 1) {
-        const delay = Math.min(loginAttempts * 1000, 5000);
-        loginBtn.disabled = true;
-        
-        setTimeout(() => {
-            loginBtn.disabled = false;
-        }, delay);
-    }
-}
-
-function validateInputs(username, password, role) {
-    if (!username) {
-        showErrorMessage('Username harus diisi');
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        showErrorMessage('Format email tidak valid');
         usernameInput.focus();
         return false;
     }
@@ -320,12 +415,18 @@ function validateInputs(username, password, role) {
 }
 
 function validateUsername() {
-    const username = usernameInput.value.trim();
+    const email = usernameInput.value.trim();
     const inputWrapper = usernameInput.parentElement;
     
-    if (username.length > 0 && username.length < 3) {
-        inputWrapper.classList.add('error');
-        showFieldError(usernameInput, 'Username minimal 3 karakter');
+    if (email.length > 0) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            inputWrapper.classList.add('error');
+            showFieldError(usernameInput, 'Format email tidak valid');
+        } else {
+            inputWrapper.classList.remove('error');
+            hideFieldError(usernameInput);
+        }
     } else {
         inputWrapper.classList.remove('error');
         hideFieldError(usernameInput);
@@ -373,7 +474,9 @@ function togglePasswordVisibility() {
     passwordInput.type = isPassword ? 'text' : 'password';
     
     const icon = togglePasswordBtn.querySelector('i');
-    icon.className = isPassword ? 'fas fa-eye-slash' : 'fas fa-eye';
+    if (icon) {
+        icon.className = isPassword ? 'fas fa-eye-slash' : 'fas fa-eye';
+    }
     
     // Add animation
     togglePasswordBtn.style.transform = 'scale(0.9)';
@@ -393,29 +496,35 @@ function handleRoleChange() {
 }
 
 function showRoleInfoPanel(role) {
+    if (!roleInfoPanel) return;
+    
     const roleInfo = ROLE_PERMISSIONS[role];
     const roleDetails = document.getElementById('roleDetails');
     
-    roleDetails.innerHTML = `
-        <div class="role-header">
-            <h4>${roleInfo.name}</h4>
-            <p>${roleInfo.description}</p>
-        </div>
-        <div class="role-permissions">
-            <h5>Hak Akses:</h5>
-            <ul>
-                ${roleInfo.permissions.map(permission => `
-                    <li><i class="fas fa-check"></i> ${formatPermission(permission)}</li>
-                `).join('')}
-            </ul>
-        </div>
-    `;
+    if (roleDetails) {
+        roleDetails.innerHTML = `
+            <div class="role-header">
+                <h4>${roleInfo.name}</h4>
+                <p>${roleInfo.description}</p>
+            </div>
+            <div class="role-permissions">
+                <h5>Hak Akses:</h5>
+                <ul>
+                    ${roleInfo.permissions.map(permission => `
+                        <li><i class="fas fa-check"></i> ${formatPermission(permission)}</li>
+                    `).join('')}
+                </ul>
+            </div>
+        `;
+    }
     
     roleInfoPanel.classList.add('show');
 }
 
 function closeRoleInfoPanel() {
-    roleInfoPanel.classList.remove('show');
+    if (roleInfoPanel) {
+        roleInfoPanel.classList.remove('show');
+    }
 }
 
 function formatPermission(permission) {
@@ -436,56 +545,76 @@ function formatPermission(permission) {
 }
 
 function populateRoleInfo() {
+    if (!roleSelect) return;
+    
     // Add role information to select options
     const adminOption = roleSelect.querySelector('option[value="admin"]');
     const userOption = roleSelect.querySelector('option[value="user"]');
     
     if (adminOption) {
-        adminOption.textContent = `${ROLE_PERMISSIONS.admin.name} - ${ROLE_PERMISSIONS.admin.description}`;
+        adminOption.textContent = `Administrator`;
     }
     
     if (userOption) {
-        userOption.textContent = `${ROLE_PERMISSIONS.user.name} - ${ROLE_PERMISSIONS.user.description}`;
+        userOption.textContent = `User`;
     }
 }
 
 function setLoadingState(isLoading) {
+    if (!loginBtn) return;
+    
     const btnText = loginBtn.querySelector('.btn-text');
     const btnLoader = loginBtn.querySelector('.btn-loader');
     
     if (isLoading) {
         loginBtn.classList.add('loading');
         loginBtn.disabled = true;
-        btnText.style.display = 'none';
-        btnLoader.style.display = 'flex';
+        if (btnText) btnText.style.display = 'none';
+        if (btnLoader) btnLoader.style.display = 'flex';
     } else {
         loginBtn.classList.remove('loading');
         loginBtn.disabled = false;
-        btnText.style.display = 'block';
-        btnLoader.style.display = 'none';
+        if (btnText) btnText.style.display = 'block';
+        if (btnLoader) btnLoader.style.display = 'none';
     }
 }
 
 function showErrorMessage(message) {
     hideMessages();
-    document.getElementById('errorText').textContent = message;
-    errorMessage.style.display = 'flex';
-    
-    // Auto hide after 5 seconds
-    setTimeout(() => {
-        errorMessage.style.display = 'none';
-    }, 5000);
+    if (errorMessage) {
+        const errorText = document.getElementById('errorText');
+        if (errorText) {
+            errorText.textContent = message;
+        }
+        errorMessage.style.display = 'flex';
+        
+        // Auto hide after 5 seconds
+        setTimeout(() => {
+            errorMessage.style.display = 'none';
+        }, 5000);
+    } else {
+        // Fallback to alert if error message element not found
+        alert('Error: ' + message);
+    }
 }
 
 function showSuccessMessage(message) {
     hideMessages();
-    document.getElementById('successText').textContent = message;
-    successMessage.style.display = 'flex';
+    if (successMessage) {
+        const successText = document.getElementById('successText');
+        if (successText) {
+            successText.textContent = message;
+        }
+        successMessage.style.display = 'flex';
+    } else {
+        // Fallback to alert if success message element not found
+        alert('Success: ' + message);
+    }
 }
 
 function hideMessages() {
-    errorMessage.style.display = 'none';
-    successMessage.style.display = 'none';
+    if (errorMessage) errorMessage.style.display = 'none';
+    if (successMessage) successMessage.style.display = 'none';
 }
 
 function redirectToDashboard(role) {
@@ -505,165 +634,92 @@ function startSessionTimer() {
 
 function handleSessionTimeout() {
     alert('Sesi Anda telah berakhir. Silakan login kembali.');
-    logout();
-}
-
-function logout() {
-    // Clear session data
-    localStorage.removeItem('userSession');
-    sessionStorage.removeItem('currentRole');
-    
-    // Clear timer
-    if (sessionTimer) {
-        clearTimeout(sessionTimer);
-    }
-    
-    // Reset form
-    loginForm.reset();
-    hideMessages();
-    
-    currentUser = null;
-    
-    console.log('User logged out');
+    handleLogout();
 }
 
 function checkExistingSession() {
+    // Firebase Auth state will be handled by onAuthStateChanged
+    // Also check if we have valid session data
     const sessionData = localStorage.getItem('userSession');
+    const currentUser = localStorage.getItem('currentUser');
     
-    if (sessionData) {
+    if (currentUser && !sessionData) {
+        // Ada data Firebase tapi tidak ada session data, buat session data
         try {
-            const session = JSON.parse(sessionData);
-            const loginTime = new Date(session.loginTime);
-            const now = new Date();
-            
-            // Check if session is still valid
-            if (now - loginTime < SECURITY_CONFIG.sessionTimeout) {
-                // Session is valid, redirect to dashboard
-                redirectToDashboard(session.role);
-                return;
-            }
+            const userData = JSON.parse(currentUser);
+            const sessionInfo = {
+                username: userData.displayName,
+                email: userData.email,
+                role: userData.role,
+                loginTime: userData.loginTime,
+                uid: userData.uid
+            };
+            localStorage.setItem('userSession', JSON.stringify(sessionInfo));
+            localStorage.setItem('currentRole', userData.role);
         } catch (error) {
-            console.error('Error parsing session data:', error);
+            console.error('Error creating session data:', error);
         }
-        
-        // Clear invalid session
-        localStorage.removeItem('userSession');
     }
-}
-
-function checkAccountLockStatus() {
-    // Check all users for expired locks
-    Object.keys(USER_DATABASE).forEach(username => {
-        if (isAccountLocked(username)) {
-            // Account is still locked, don't do anything
-        }
-    });
 }
 
 function setupFormValidation() {
-    // Add real-time validation styles
-    const style = document.createElement('style');
-    style.textContent = `
-        .input-wrapper.error input,
-        .input-wrapper.error select {
-            border-color: #dc2626 !important;
-            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important;
-        }
-        
-        .field-error {
-            animation: slideIn 0.3s ease;
-        }
-    `;
-    document.head.appendChild(style);
+    // Additional form validation setup if needed
 }
 
 function loadUserPreferences() {
-    // Load remember me preference
-    const rememberMe = localStorage.getItem('rememberMe') === 'true';
-    document.getElementById('rememberMe').checked = rememberMe;
+    // Load user preferences from localStorage
+    const rememberMeCheckbox = document.getElementById('rememberMe');
+    const savedUsername = localStorage.getItem('rememberedUsername');
     
-    if (rememberMe) {
-        const savedUsername = localStorage.getItem('savedUsername');
-        if (savedUsername) {
-            usernameInput.value = savedUsername;
-        }
+    if (savedUsername && usernameInput) {
+        usernameInput.value = savedUsername;
     }
-}
-
-function handleRememberMe() {
-    const rememberMe = document.getElementById('rememberMe').checked;
-    localStorage.setItem('rememberMe', rememberMe);
     
-    if (rememberMe) {
-        localStorage.setItem('savedUsername', usernameInput.value);
-    } else {
-        localStorage.removeItem('savedUsername');
+    if (rememberMeCheckbox && savedUsername) {
+        rememberMeCheckbox.checked = true;
     }
 }
 
 function setupSecurityFeatures() {
-    // Disable right-click context menu on sensitive elements
-    [usernameInput, passwordInput].forEach(input => {
-        input.addEventListener('contextmenu', (e) => e.preventDefault());
-    });
-    
-    // Clear clipboard after password input
-    passwordInput.addEventListener('paste', () => {
-        setTimeout(() => {
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText('');
-            }
-        }, 1000);
-    });
-    
-    // Detect developer tools (basic detection)
-    let devtools = {open: false, orientation: null};
-    setInterval(() => {
-        if (window.outerHeight - window.innerHeight > 200 || window.outerWidth - window.innerWidth > 200) {
-            if (!devtools.open) {
-                devtools.open = true;
-                console.warn('Developer tools detected. Please close for security.');
-            }
-        } else {
-            devtools.open = false;
-        }
-    }, 500);
+    // Additional security features setup
+    console.log('Security features initialized');
 }
 
-function handleForgotPassword(event) {
-    event.preventDefault();
-    alert('Fitur lupa password akan segera tersedia. Silakan hubungi administrator.');
+function handleRememberMe() {
+    const rememberMeCheckbox = document.getElementById('rememberMe');
+    const username = usernameInput.value.trim();
+    
+    if (rememberMeCheckbox && rememberMeCheckbox.checked && username) {
+        localStorage.setItem('rememberedUsername', username);
+    } else {
+        localStorage.removeItem('rememberedUsername');
+    }
 }
 
 function handleRegister(event) {
-    event.preventDefault();
-    alert('Fitur registrasi akan segera tersedia. Silakan hubungi administrator untuk membuat akun baru.');
+    if (event) event.preventDefault();
+    
+    // Simple registration form (you can enhance this)
+    const email = prompt('Masukkan email untuk registrasi:');
+    const password = prompt('Masukkan password (minimal 6 karakter):');
+    const displayName = prompt('Masukkan nama lengkap:');
+    const role = prompt('Pilih role (admin/user):') || 'user';
+    
+    if (email && password && displayName) {
+        handleSignUp(email, password, displayName, role);
+    }
 }
 
 function handleKeyboardShortcuts(event) {
     // Enter key to submit form
-    if (event.key === 'Enter' && !event.shiftKey) {
-        if (document.activeElement === usernameInput || 
-            document.activeElement === passwordInput || 
-            document.activeElement === roleSelect) {
-            event.preventDefault();
-            loginForm.dispatchEvent(new Event('submit'));
-        }
-    }
-    
-    // Escape key to close role panel
-    if (event.key === 'Escape') {
-        closeRoleInfoPanel();
+    if (event.key === 'Enter' && (event.target === usernameInput || event.target === passwordInput)) {
+        event.preventDefault();
+        loginForm.dispatchEvent(new Event('submit'));
     }
 }
 
-// Export functions for testing or external use
-window.LoginSystem = {
-    authenticateUser,
-    validateInputs,
-    createUserSession,
-    logout,
-    ROLE_PERMISSIONS,
-    USER_DATABASE
-};
+// Export functions for global access
+window.handleLogout = handleLogout;
+window.handleSignUp = handleSignUp;
+window.handleForgotPassword = handleForgotPassword;
 

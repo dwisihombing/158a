@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="../components/css/login-styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
+
 <body>
     <div class="login-container">
         <!-- Background Animation -->
@@ -34,14 +36,8 @@
                     <label for="username">Username</label>
                     <div class="input-wrapper">
                         <i class="fas fa-user"></i>
-                        <input 
-                            type="text" 
-                            id="username" 
-                            name="username" 
-                            placeholder="Masukkan username Anda"
-                            required
-                            autocomplete="username"
-                        >
+                        <input type="text" id="username" name="username" placeholder="Masukkan username Anda" required
+                            autocomplete="username">
                     </div>
                 </div>
 
@@ -49,14 +45,8 @@
                     <label for="password">Password</label>
                     <div class="input-wrapper">
                         <i class="fas fa-lock"></i>
-                        <input 
-                            type="password" 
-                            id="password" 
-                            name="password" 
-                            placeholder="Masukkan password Anda"
-                            required
-                            autocomplete="current-password"
-                        >
+                        <input type="password" id="password" name="password" placeholder="Masukkan password Anda"
+                            required autocomplete="current-password">
                         <button type="button" class="toggle-password" id="togglePassword">
                             <i class="fas fa-eye"></i>
                         </button>
@@ -140,25 +130,34 @@
         </div>
     </div>
 
-    <!-- Demo Credentials Info -->
-    <div class="demo-info">
-        <div class="demo-card">
-            <h4><i class="fas fa-info-circle"></i> Demo Credentials</h4>
-            <div class="demo-credentials">
-                <div class="credential-item">
-                    <strong>Username:</strong> anto
-                </div>
-                <div class="credential-item">
-                    <strong>Password:</strong> anto
-                </div>
-                <div class="credential-item">
-                    <strong>Roles:</strong> Admin / User
-                </div>
-            </div>
-        </div>
-    </div>
+    
 
     <script src="../components/js/login-script.js"></script>
-</body>
-</html>
 
+    <script>
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "firebase/app";
+        import { getAnalytics } from "firebase/analytics";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+
+        // Your web app's Firebase configuration
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        const firebaseConfig = {
+            apiKey: "AIzaSyDJ5acM1Ev3zy-Nr-30VKaSini8iVAK5-U",
+            authDomain: "expense-19.firebaseapp.com",
+            projectId: "expense-19",
+            storageBucket: "expense-19.firebasestorage.app",
+            messagingSenderId: "906282555690",
+            appId: "1:906282555690:web:d557d02c2b29422cf12653",
+            measurementId: "G-6VEKLLLVR2"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+    </script>
+
+</body>
+
+</html>
